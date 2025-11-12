@@ -1,0 +1,2 @@
+module HealthReportsHelper
+end
