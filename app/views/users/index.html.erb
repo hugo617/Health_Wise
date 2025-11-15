@@ -5,37 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户列表</title>
     <style>
-        ul {
-            list-style-type: none;
-            padding: 0;
+        table {
+            border-collapse: collapse;
+            width: 100%;
         }
-        li {
-            margin: 5px 0;
+        th, td {
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 8px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
     <h1>用户列表</h1>
-    <ul id="userList">
-        <!-- 这里将通过JavaScript动态生成用户列表项 -->
-    </ul>
-
-    <script>
-        // 模拟用户数据数组，每个对象包含name和age属性
-        const users = [
-            { name: 'Alice', age: 23 },
-            { name: 'Bob', age: 28 },
-            { name: 'Charlie', age: 30 }
-        ];
-
-        const userList = document.getElementById('userList');
-        users.forEach(user => {
-            const listItem = document.createElement('li');
-            listItem.textContent = `姓名: ${user.name}, 年龄: ${user.age}`;
-            userList.appendChild(listItem);
-        });
-    </script>
+    <table>
+        <thead>
+            <tr>
+                <th>手机号码</th>
+                <th>邮箱</th>
+                <th>昵称</th>
+                <th>会员类型</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% @users.each do |user| %>
+                <tr>
+                    <td><%= user.phone_number %></td>
+                    <td><%= user.email %></td>
+                    <td><%= user.nickname %></td>
+                    <td><%= user.membership_type %></td>
+                </tr>
+            <% end %>
+        </tbody>
+    </table>
 </body>
 </html>
