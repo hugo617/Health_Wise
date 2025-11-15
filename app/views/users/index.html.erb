@@ -1,2 +1,41 @@
-<h1>Users#index</h1>
-<p>Find me in app/views/users/index.html.erb</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户列表</title>
+    <style>
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>用户列表</h1>
+    <ul id="userList">
+        <!-- 这里将通过JavaScript动态生成用户列表项 -->
+    </ul>
+
+    <script>
+        // 模拟用户数据数组，每个对象包含name和age属性
+        const users = [
+            { name: 'Alice', age: 23 },
+            { name: 'Bob', age: 28 },
+            { name: 'Charlie', age: 30 }
+        ];
+
+        const userList = document.getElementById('userList');
+        users.forEach(user => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `姓名: ${user.name}, 年龄: ${user.age}`;
+            userList.appendChild(listItem);
+        });
+    </script>
+</body>
+</html>

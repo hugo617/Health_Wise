@@ -39,3 +39,6 @@
 
 # 忽略 Ruby 依赖包目录（由 Gemfile.lock 复现，无需跟踪）
 /vendor/
+
+# 忽略 Mac 系统文件
+.DS_Store
