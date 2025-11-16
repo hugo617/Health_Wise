@@ -1,4 +1,4 @@
-class UpdateUserProfileService
+class Users::UpdateUserProfileService
   def self.call(user, params)
     new(user, params).execute
   end

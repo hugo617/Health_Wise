@@ -82,3 +82,47 @@ puts "👤 普通用户: #{User.where(role: 'user').count}"
 puts "✅ 活跃用户: #{User.where(status: 'active').count}"
 puts "🚫 禁用用户: #{User.where(status: 'inactive').count}"
 puts "⏸️ 暂停用户: #{User.where(status: 'suspended').count}"
+
+# 创建健康报告测试数据
+puts "创建健康报告测试数据..."
+
+report_types = ['基因检查报告', '蛋白质检测报告']
+report_paths = [
+  '/reports/gene_report_2025.pdf',
+  '/reports/protein_analysis_2025.pdf',
+  '/uploads/reports/genetic_test_001.pdf',
+  '/uploads/reports/protein_check_002.pdf'
+]
+report_icons = [
+  'https://picsum.photos/seed/gene-report/100/100.jpg',
+  'https://picsum.photos/seed/protein-report/100/100.jpg',
+  'https://picsum.photos/seed/medical-report/100/100.jpg'
+]
+
+# 为前20个用户创建健康报告
+User.where(deleted_at: nil).limit(20).each_with_index do |user, index|
+  # 每个用户创建2-4份健康报告
+  rand(2..4).times do |i|
+    report_type = report_types.sample
+    
+    # 跳过已存在的相同类型报告
+    next if HealthReport.exists?(user_id: user.id, report_type: report_type)
+    
+    HealthReport.create!(
+      user: user,
+      report_type: report_type,
+      report_path: report_paths.sample,
+      report_icon_path: report_icons.sample,
+      created_at: rand(30).days.ago,
+      updated_at: rand(30).days.ago
+    )
+  end
+  
+  print "."
+  puts if (index + 1) % 5 == 0
+end
+
+puts "\n✅ 健康报告测试数据创建完成！"
+puts "📋 总报告数量: #{HealthReport.count}"
+puts "🧬 基因检查报告: #{HealthReport.where(report_type: '基因检查报告').count}"
+puts "🧪 蛋白质检测报告: #{HealthReport.where(report_type: '蛋白质检测报告').count}"

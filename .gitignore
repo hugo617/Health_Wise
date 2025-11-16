@@ -54,3 +54,8 @@ AUTHENTICATION_IMPLEMENTATION_SUMMARY.md
 FINAL_TEST_REPORT.md
 
 test_user_management.rb
+test_refactored_services.rb
+test_frontend_integration.rb
+test_admin_health_reports.rb
+test_health_report_management.rb
+HEALTH_REPORTS_REFACTORING_TEST.md

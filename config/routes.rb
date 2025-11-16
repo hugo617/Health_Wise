@@ -10,11 +10,21 @@ Rails.application.routes.draw do
   post "login/authenticate", to: "login#authenticate"
   delete "logout", to: "login#logout", as: :logout
 
-  # 健康报告相关接口
-  get "health_reports", to: "health_reports#index"
-  get "health_reports/:id", to: "health_reports#show"
+  # 用户个人健康报告路由
+  get "health_report", to: "health_reports#index", as: :health_report
+  get "health_report/:id", to: "health_reports#show", as: :health_report_detail
+
+  # 健康报告 API 接口
+  post "health_reports", to: "health_reports#create"
+  patch "health_reports/:id", to: "health_reports#update"
+  delete "health_reports/:id", to: "health_reports#destroy"
   post "health_reports/update_profile", to: "health_reports#update_profile"
   post "health_reports/upload_avatar", to: "health_reports#upload_avatar"
+
+  # 管理员健康报告管理路由
+  namespace :admin do
+    resources :health_reports, only: [:index, :show]
+  end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
@@ -26,11 +36,8 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
-  # 用户管理路由 - 完整的 RESTful 路由
+  # 用户管理路由 - 完整的 RESTful 路由（仅管理员可访问）
   resources :users
-
-  # 健康档案路由
-  get "health_report" => "health_reports#index", as: :health_report 
 
   # Defines the root path route ("/")
   root to:"login#index"

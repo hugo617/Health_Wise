@@ -19,13 +19,13 @@ class LoginController < ApplicationController
     phone_number = params[:phone_number]
 
     # 调用服务层
-    result = SendSmsService.call(phone_number: phone_number)
+    result = Authentication::SendSmsService.call(phone_number: phone_number)
 
     # 根据服务层返回结果处理响应
     if result[:success]
       render json: { success: true, message: result[:data][:message] }, status: :ok
     else
-      render json: { success: false, error: result[:error][:message] }, status: :unprocessable_entity
+      render json: { success: false, error: result[:error] }, status: :unprocessable_entity
     end
   end
 
@@ -36,7 +36,7 @@ class LoginController < ApplicationController
     code = params[:code]
 
     # 调用服务层
-    result = VerifySmsCodeService.call(phone_number: phone_number, code: code)
+    result = Authentication::VerifySmsCodeService.call(phone_number: phone_number, code: code)
 
     # 根据服务层返回结果处理响应
     if result[:success]
@@ -53,7 +53,7 @@ class LoginController < ApplicationController
         user: user
       }, status: :ok
     else
-      render json: { success: false, error: result[:error][:message] }, status: :unprocessable_entity
+      render json: { success: false, error: result[:error] }, status: :unprocessable_entity
     end
   end
 
@@ -64,7 +64,7 @@ class LoginController < ApplicationController
     password = params[:password]
 
     # 调用服务层
-    result = AuthenticateUserService.call(phone_number: phone_number, password: password)
+    result = Authentication::AuthenticateUserService.call(phone_number: phone_number, password: password)
 
     # 根据服务层返回结果处理响应
     if result[:success]

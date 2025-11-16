@@ -1,6 +1,6 @@
 # 用户密码认证服务
 # 遵循 rails.md 规范：服务层封装业务逻辑
-class AuthenticateUserService
+class Authentication::AuthenticateUserService
   # 统一入口方法
   def self.call(params)
     new(params).execute
@@ -13,24 +13,24 @@ class AuthenticateUserService
 
   def execute
     # 验证参数
-    return error(:invalid_params, "手机号和密码不能为空") if @phone_number.blank? || @password.blank?
+    return error("手机号和密码不能为空") if @phone_number.blank? || @password.blank?
 
     # 验证手机号格式
     unless valid_phone_number?
-      return error(:invalid_phone_number, "手机号格式不正确")
+      return error("手机号格式不正确")
     end
 
     # 查找用户
     user = find_user
-    return error(:user_not_found, "用户不存在") unless user
+    return error("用户不存在") unless user
 
     # 检查用户状态
-    return error(:user_inactive, "用户已被禁用") unless user.status == 'active'
+    return error("用户已被禁用") unless user.status == 'active'
 
     # 验证密码
     unless user.authenticate(@password)
       Rails.logger.warn "密码验证失败: #{@phone_number}"
-      return error(:invalid_password, "密码错误")
+      return error("密码错误")
     end
 
     # 记录登录日志
@@ -61,12 +61,10 @@ class AuthenticateUserService
   end
 
   # 错误响应
-  def error(code, message)
+  def error(message)
     {
       success: false,
-      error: message,
-      error_code: code
+      error: message
     }
   end
 end
-

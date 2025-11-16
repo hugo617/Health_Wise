@@ -1,4 +1,4 @@
-class UploadUserAvatarService
+class Users::UploadUserAvatarService
   def self.call(user, avatar_file)
     new(user, avatar_file).execute
   end

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康报告详情（管理员）- 烯晞数字健康档案系统</title>
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #667eea;
+            --secondary-purple: #764ba2;
+            --accent-teal: #06b6d4;
+            --accent-emerald: #10b981;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content-header h1 {
+            font-size: 1.75rem;
+            color: white;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            color: white;
+            border-bottom: none;
+            border-radius: 1rem 1rem 0 0 !important;
+            font-weight: 600;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            width: 150px;
+            flex-shrink: 0;
+        }
+        
+        .info-value {
+            color: #6b7280;
+            flex: 1;
+        }
+        
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面标题和操作按钮 -->
+    <div class="content-header">
+        <h1><i class="fas fa-file-medical me-3"></i>健康报告详情（管理员）</h1>
+        <div>
+            <%= link_to admin_health_reports_path, class: "btn btn-secondary" do %>
+                <i class="fas fa-arrow-left me-2"></i>返回列表
+            <% end %>
+        </div>
+    </div>
+
+    <!-- 用户信息 -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-user me-2"></i>用户信息
+        </div>
+        <div class="card-body">
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-hashtag me-2"></i>用户ID</div>
+                <div class="info-value"><%= @health_report.user.id %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-user-circle me-2"></i>昵称</div>
+                <div class="info-value"><%= @health_report.user.nickname %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-phone me-2"></i>手机号</div>
+                <div class="info-value"><%= @health_report.user.phone_number %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-envelope me-2"></i>邮箱</div>
+                <div class="info-value"><%= @health_report.user.email %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-shield-alt me-2"></i>角色</div>
+                <div class="info-value">
+                    <% if @health_report.user.role == 'admin' %>
+                        <span class="badge bg-danger">管理员</span>
+                    <% else %>
+                        <span class="badge bg-primary">普通用户</span>
+                    <% end %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报告基本信息 -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-info-circle me-2"></i>报告基本信息
+        </div>
+        <div class="card-body">
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-hashtag me-2"></i>报告ID</div>
+                <div class="info-value"><%= @health_report.id %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-file-alt me-2"></i>报告类型</div>
+                <div class="info-value"><%= @health_report.report_type %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-calendar me-2"></i>创建时间</div>
+                <div class="info-value"><%= @health_report.created_at.strftime('%Y-%m-%d %H:%M:%S') %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-clock me-2"></i>更新时间</div>
+                <div class="info-value"><%= @health_report.updated_at.strftime('%Y-%m-%d %H:%M:%S') %></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-folder me-2"></i>报告路径</div>
+                <div class="info-value"><%= @health_report.report_path %></div>
+            </div>
+            <% if @health_report.report_icon_path.present? %>
+            <div class="info-row">
+                <div class="info-label"><i class="fas fa-image me-2"></i>报告图标</div>
+                <div class="info-value">
+                    <img src="<%= @health_report.report_icon_path %>" alt="报告图标" style="max-width: 100px; border-radius: 0.5rem;">
+                </div>
+            </div>
+            <% end %>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
