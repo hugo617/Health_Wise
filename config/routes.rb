@@ -7,6 +7,12 @@ Rails.application.routes.draw do
   post "login/send_code", to: "login#send_code"
   post "login/verify_code", to: "login#verify_code"
 
+  # 健康报告相关接口
+  get "health_reports", to: "health_reports#index"
+  get "health_reports/:id", to: "health_reports#show"
+  post "health_reports/update_profile", to: "health_reports#update_profile"
+  post "health_reports/upload_avatar", to: "health_reports#upload_avatar"
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

@@ -2,13 +2,16 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="健康报告管理">
   <meta name="theme-color" content="#8A2BE2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="csrf-token" content="<%= form_authenticity_token %>">
   <title>健康报告管理</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* 设计系统变量 - 与登录页面保持一致 */
     :root {
@@ -29,34 +32,57 @@
       --color-bg: #FFFFFF;
       --color-text: #333333;
       --color-text-light: rgba(255, 255, 255, 0.8);
+      --color-text-secondary: rgba(255, 255, 255, 0.6);
       --radius: 18px;
       --radius-large: 28px;
+      --radius-small: 12px;
       --shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
       --shadow-soft: 0 12px 35px rgba(0, 0, 0, 0.1);
+      --shadow-card: 0 8px 25px rgba(0, 0, 0, 0.08);
       --tap-size: 44px;
       --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       --transition-fast: all 0.3s ease;
+      --safe-area-top: env(safe-area-inset-top, 0px);
+      --safe-area-bottom: env(safe-area-inset-bottom, 0px);
     }
+
     html {
       scroll-behavior: smooth;
       font-size: clamp(14px, 4vw, 18px);
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
     }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       * { animation: none !important; transition: none !important; }
     }
-    * { box-sizing: border-box; }
+
+    * { 
+      box-sizing: border-box; 
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    input, textarea, select {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
     body {
       margin: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: var(--color-text);
-      /* 应用登录页面的渐变背景 */
       background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
+      padding-top: var(--safe-area-top);
+      padding-bottom: var(--safe-area-bottom);
     }
 
     /* 动态背景效果 - 与登录页面一致 */
@@ -73,12 +99,14 @@
         radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
       animation: breathe 12s ease-in-out infinite;
       pointer-events: none;
+      z-index: 1;
     }
 
     @keyframes breathe {
       0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
       50% { opacity: 0.9; transform: scale(1.02) rotate(1deg); }
     }
+
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -90,127 +118,40 @@
       white-space: nowrap;
       border: 0;
     }
-    .top-region {
-      min-height: 40vh;
-      padding: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .patient-card {
-      width: 100%;
-      max-width: 1120px;
-      /* 应用毛玻璃效果 - 与登录页面一致 */
-      background: var(--glass-bg);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      color: var(--color-bg);
-      border-radius: var(--radius-large);
-      box-shadow: var(--shadow);
-      padding: 1.5rem;
-      overflow: hidden;
-      position: relative;
-      /* 添加边框光晕效果 */
-      border: 1px solid var(--glass-border);
-      transition: var(--transition);
-      z-index: 2;
-    }
 
-    /* 毛玻璃容器边框渐变效果 */
-    .patient-card::before {
-      content: '';
-      position: absolute;
+    /* 顶部导航栏 - 移动端优化 */
+    .top-nav {
+      position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      bottom: 0;
-      border-radius: var(--radius-large);
-      padding: 1px;
-      background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.3) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.15) 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
-    .patient-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 35px 70px rgba(0, 0, 0, 0.15);
-    }
-    .profile-header {
-      position: relative;
-      height: 200px;
-      background: linear-gradient(135deg, #7A1FD9, #5C2BD9);
-      border-radius: var(--radius);
-      margin: -1.5rem -1.5rem 1.5rem;
-      overflow: hidden;
-    }
-    .profile-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.6;
-    }
-    /* ===== 正圆头像 + 最外层 + 英文小字 ===== */
-    .profile-avatar-wrapper {
-      position: absolute;
-      bottom: -55px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .profile-avatar-circle {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      border: 4px solid var(--color-bg);
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-      background: var(--color-bg);
-      flex-shrink: 0;
-    }
-    .profile-avatar {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .avatar-file-input {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-    .avatar-caption {
-      font-size: 12px;
-      color: var(--color-bg);
-      white-space: nowrap;
-      user-select: none;
-    }
-    /* ===== 其余样式 ===== */
-    .topbar {
+      height: calc(var(--tap-size) + 12px);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
-      margin-top: 60px;
+      padding: 0 16px;
+      z-index: 1000;
+      transition: var(--transition);
     }
+
+    .nav-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      letter-spacing: 0.3px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .logout-btn {
-      /* 应用登录页面的次要按钮样式 */
       background: linear-gradient(135deg,
         rgba(255, 255, 255, 0.15),
         rgba(255, 255, 255, 0.08));
@@ -218,11 +159,11 @@
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 999px;
-      padding: 0.5rem;
+      padding: 8px;
       font-weight: 600;
       transition: var(--transition);
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
+      min-height: 36px;
+      min-width: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -231,7 +172,6 @@
       overflow: hidden;
     }
 
-    /* 按钮光晕效果 */
     .logout-btn::before {
       content: '';
       position: absolute;
@@ -251,8 +191,8 @@
     }
 
     .logout-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
       background: linear-gradient(135deg,
         rgba(255, 255, 255, 0.25),
         rgba(255, 255, 255, 0.15));
@@ -263,349 +203,217 @@
       transform: translateY(-1px);
     }
 
-    .logout-btn:focus-visible {
-      outline: 3px solid rgba(6, 182, 212, 0.35);
-      outline-offset: 2px;
-    }
     .logout-icon {
-      width: 24px;
-      height: 24px;
+      width: 20px;
+      height: 20px;
     }
-    .patient-card h1 {
-      font-size: 1.375rem;
-      margin: 0 0 16px;
+
+    /* 个人信息卡片 - 移动端优化 */
+    .profile-section {
+      margin-top: calc(var(--tap-size) + 24px);
+      padding: 0 16px 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .profile-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
       color: var(--color-bg);
-      letter-spacing: 0.3px;
-      text-align: center;
-      animation: colorChange 5s infinite alternate;
-    }
-    @keyframes colorChange {
-      0% { color: #ff9a9e; }
-      25% { color: #fad0c4; }
-      50% { color: #a1c4fd; }
-      75% { color: #c2e9fb; }
-      100% { color: #d4fc79; }
-    }
-    .patient-info {
-      color: #fff;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-top: 12px;
-    }
-    .bottom-region {
-      flex: 1;
-      padding: 1rem 1.5rem 1.5rem;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      touch-action: manipulation;
-      overscroll-behavior-y: contain;
-      min-height: 60vh;
-    }
-    .reports-groups {
-      width: 100%;
-      max-width: 1120px;
-      margin: 0 auto;
-      display: grid;
-      gap: 20px;
-    }
-    .report-group {
-      display: grid;
-      gap: 14px;
-    }
-    .group-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 2px;
-    }
-    .group-header h3 {
-      margin: 0;
-      /* 应用登录页面的渐变文字效果 */
-      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    .group-icon {
-      font-size: 20px;
-    }
-    .group-icon-img {
-      width: var(--tap-size);
-      height: var(--tap-size);
-      border-radius: 8px;
-    }
-    .reports-list {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-    .report-item {
-      display: block;
-    }
-    .report-card {
-      /* 应用毛玻璃卡片效果 */
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(6, 182, 212, 0.2);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-soft);
+      border-radius: var(--radius-large);
+      box-shadow: var(--shadow);
+      padding: 24px 20px;
+      border: 1px solid var(--glass-border);
       transition: var(--transition);
       position: relative;
       overflow: hidden;
     }
 
-    /* 卡片光晕效果 */
-    .report-card::before {
+    .profile-card::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      border-radius: var(--radius);
+      border-radius: var(--radius-large);
       padding: 1px;
       background: linear-gradient(135deg,
-        rgba(6, 182, 212, 0.3) 0%,
-        rgba(16, 185, 129, 0.2) 100%);
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.15) 100%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
     }
 
-    .report-card:hover::before {
-      opacity: 1;
-    }
-
-    .type-protein .report-card {
-      border-color: rgba(6, 182, 212, 0.3);
-    }
-
-    .type-gene .report-card {
-      border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    .report-card:focus-within {
-      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25), var(--shadow);
-      transform: translateY(-3px);
-    }
-
-    .report-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    }
-    .report-card summary {
-      list-style: none;
+    .profile-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 0.9rem 1rem;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .avatar-container {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid var(--color-bg);
+      object-fit: cover;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: var(--transition);
+    }
+
+    .profile-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    .avatar-upload {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--accent-teal);
+      border-radius: 50%;
+      border: 2px solid var(--color-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .avatar-upload:hover {
+      background: var(--accent-emerald);
+      transform: scale(1.1);
+    }
+
+    .avatar-upload svg {
+      width: 16px;
+      height: 16px;
+      color: white;
+    }
+
+    .avatar-file-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
       cursor: pointer;
     }
-    .report-card summary::-webkit-details-marker {
+
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      color: white;
+      letter-spacing: 0.3px;
+    }
+
+    .profile-membership {
+      font-size: 14px;
+      color: var(--color-text-light);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 999px;
+      display: inline-block;
+      font-weight: 500;
+    }
+
+    .profile-details {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-item:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      color: white;
+      font-weight: 600;
+    }
+
+    .detail-value.password {
+      font-family: monospace;
+      letter-spacing: 2px;
+    }
+
+    .edit-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-top: 12px;
+      font-style: italic;
+    }
+
+    /* 编辑表单 - 移动端优化 */
+    .edit-form {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      padding: 20px;
       display: none;
     }
-    .summary-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .report-type {
-      /* 应用登录页面的渐变文字效果 */
-      background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-emerald) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .report-date {
-      font-size: 13px;
-      opacity: 0.75;
-    }
-    .summary-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 1;
-      justify-content: flex-end;
-    }
-    .report-summary {
-      color: var(--color-text);
-    }
-    .details-btn {
-      /* 应用登录页面的主要按钮样式 */
-      background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-emerald) 100%);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      padding: 0.5rem 0.9rem;
-      font-weight: 600;
-      font-size: 14px;
-      transition: var(--transition);
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
-      letter-spacing: 0.3px;
-    }
 
-    /* 按钮光晕动画 */
-    .details-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.25),
-        transparent);
-      transition: left 0.6s ease;
-    }
-
-    .details-btn:hover::before {
-      left: 100%;
-    }
-
-    .details-btn:hover {
-      background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-teal) 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4);
-    }
-
-    .details-btn:active {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
-    }
-
-    .details-btn:focus-visible {
-      outline: 3px solid rgba(6, 182, 212, 0.35);
-      outline-offset: 2px;
-    }
-    .report-body {
-      padding: 0 1rem 1rem;
+    .edit-form.active {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.625rem 1rem;
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: max-height 280ms ease, opacity 280ms ease;
-    }
-    .report-card[open] .report-body {
-      max-height: 500px;
-      opacity: 1;
-    }
-    .report-detail-row {
-      display: contents;
-    }
-    .report-detail-row .key {
-      /* 应用登录页面的渐变文字效果 */
-      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-purple) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-    .report-detail-row .val {
-      color: var(--color-text);
-    }
-    @media (max-width: 600px) {
-      .report-body {
-        grid-template-columns: 1fr;
-      }
-    }
-    .actions {
-      margin-top: 12px;
-    }
-    .edit-btn {
-      /* 应用登录页面的次要按钮样式 */
-      background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.15),
-        rgba(255, 255, 255, 0.08));
-      backdrop-filter: blur(12px);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--radius);
-      padding: 0.5rem 0.75rem;
-      font-weight: 600;
-      transition: var(--transition);
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
     }
 
-    .edit-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent);
-      transition: left 0.6s ease;
-    }
-
-    .edit-btn:hover::before {
-      left: 100%;
-    }
-
-    .edit-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-      background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.25),
-        rgba(255, 255, 255, 0.15));
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .edit-btn:active {
-      transform: translateY(-1px);
-    }
-
-    .edit-btn:focus-visible {
-      outline: 3px solid rgba(6, 182, 212, 0.35);
-      outline-offset: 2px;
-    }
-    .edit-form {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 16px;
-      background: rgba(255,255,255,0.12);
-      border-radius: var(--radius);
-      padding: 1rem;
-    }
     .form-row {
       display: grid;
-      gap: 6px;
+      gap: 8px;
     }
+
+    .form-row.full-width {
+      grid-column: 1 / -1;
+    }
+
     .edit-form label {
       color: var(--color-bg);
       font-weight: 600;
+      font-size: 14px;
     }
+
     .edit-form input {
-      /* 应用登录页面的输入框样式 */
       width: 100%;
-      padding: 20px 24px;
+      padding: 16px 20px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius);
+      border-radius: var(--radius-small);
       background: rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(12px);
       font-size: 16px;
@@ -617,239 +425,440 @@
 
     .edit-form input::placeholder {
       color: rgba(255, 255, 255, 0.5);
-      transition: color 0.3s ease;
       font-weight: 400;
     }
 
     .edit-form input:focus {
       background: rgba(255, 255, 255, 0.12);
       border-color: rgba(6, 182, 212, 0.4);
-      transform: translateY(-3px);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(6, 182, 212, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba(6, 182, 212, 0.1);
     }
 
-    .edit-form input:focus::placeholder {
-      color: rgba(255, 255, 255, 0.7);
+    .edit-form input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
+
     .form-actions {
       grid-column: 1 / -1;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       justify-content: flex-end;
+      margin-top: 8px;
     }
-    .save-btn {
-      /* 应用登录页面的主要按钮样式 */
-      background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-emerald) 100%);
-      color: white;
+
+    .btn {
+      padding: 12px 24px;
       border: none;
-      border-radius: var(--radius);
-      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-small);
       font-weight: 600;
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
+      font-size: 14px;
       cursor: pointer;
       transition: var(--transition);
+      min-height: var(--tap-size);
       position: relative;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
       letter-spacing: 0.3px;
     }
 
-    .save-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(255, 255, 255, 0.25),
-        transparent);
-      transition: left 0.6s ease;
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-emerald) 100%);
+      color: white;
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3);
     }
 
-    .save-btn:hover::before {
-      left: 100%;
-    }
-
-    .save-btn:hover {
+    .btn-primary:hover {
       background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-teal) 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(6, 182, 212, 0.4);
     }
 
-    .save-btn:active {
-      transform: translateY(-1px);
-    }
-
-    .cancel-btn {
-      /* 应用登录页面的次要按钮样式 */
+    .btn-secondary {
       background: transparent;
       color: white;
       border: 2px solid rgba(255, 255, 255, 0.8);
-      border-radius: var(--radius);
-      padding: 0.4rem 0.75rem;
-      font-weight: 600;
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
     }
 
-    .cancel-btn:hover {
+    .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 
-    .cancel-btn:active {
+    .btn:active {
       transform: translateY(-1px);
     }
+
     .form-msg {
       grid-column: 1 / -1;
       color: var(--color-bg);
       font-weight: 600;
       min-height: 24px;
+      font-size: 14px;
+      text-align: center;
     }
+
+    /* 报告列表区域 - 移动端优化 */
+    .reports-section {
+      flex: 1;
+      padding: 0 16px 24px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+      overscroll-behavior-y: contain;
+      position: relative;
+      z-index: 2;
+    }
+
+    .reports-header {
+      margin-bottom: 20px;
+    }
+
+    .reports-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin: 0 0 8px 0;
+      letter-spacing: 0.3px;
+    }
+
+    .reports-subtitle {
+      font-size: 14px;
+      color: var(--color-text-light);
+      margin: 0;
+    }
+
+    .report-groups {
+      display: grid;
+      gap: 24px;
+    }
+
+    .report-group {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(6, 182, 212, 0.1);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .report-group:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+    }
+
+    .group-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 16px;
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), rgba(16, 185, 129, 0.05));
+      border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+    }
+
+    .group-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-small);
+      background: linear-gradient(135deg, var(--accent-teal), var(--accent-emerald));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .group-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .group-title h3 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+      letter-spacing: 0.3px;
+    }
+
+    .group-count {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .group-status {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-active {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-emerald);
+    }
+
+    .status-empty {
+      background: rgba(107, 114, 128, 0.1);
+      color: #6b7280;
+    }
+
+    .reports-list {
+      display: grid;
+      gap: 1px;
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    .report-item {
+      background: white;
+      transition: var(--transition-fast);
+    }
+
+    .report-item:hover {
+      background: rgba(6, 182, 212, 0.02);
+    }
+
+    .report-card {
+      display: block;
+      padding: 16px 20px;
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      position: relative;
+    }
+
+    .report-card::after {
+      content: '';
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid #9ca3af;
+      border-bottom: 2px solid #9ca3af;
+      transform: translateY(-50%) rotate(-45deg);
+      transition: var(--transition-fast);
+    }
+
+    .report-card:hover::after {
+      border-color: var(--accent-teal);
+      transform: translateY(-50%) rotate(-45deg) translateX(2px);
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .report-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .report-date {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .report-summary {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .report-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .report-tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .tag-normal {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--accent-emerald);
+    }
+
+    .tag-warning {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .tag-error {
+      background: rgba(244, 63, 94, 0.1);
+      color: var(--accent-rose);
+    }
+
+    /* 空状态设计 */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #6b7280;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(16, 185, 129, 0.1));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: var(--accent-teal);
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0 0 8px 0;
+    }
+
+    .empty-description {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* 加载状态 */
+    .loading-state {
+      text-align: center;
+      padding: 32px 24px;
+      color: #6b7280;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 16px;
+      border: 3px solid rgba(6, 182, 212, 0.1);
+      border-top: 3px solid var(--accent-teal);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 模态框 - 移动端优化 */
     .modal {
       position: fixed;
       inset: 0;
       display: grid;
       place-items: center;
-      background: rgba(0,0,0,0.35);
-      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
       opacity: 0;
       pointer-events: none;
       transition: opacity 240ms ease;
       touch-action: manipulation;
+      z-index: 2000;
+      padding: 16px;
     }
-    .modal .modal-content {
-      /* 应用毛玻璃效果 */
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       color: var(--color-text);
       border-radius: var(--radius-large);
       box-shadow: var(--shadow);
-      width: 92vw;
-      max-width: 420px;
-      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
       border: 1px solid rgba(6, 182, 212, 0.2);
       position: relative;
-      overflow: hidden;
+      animation: modalSlideIn 0.3s ease;
     }
 
-    /* 模态框边框光晕 */
-    .modal .modal-content::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: var(--radius-large);
-      padding: 1px;
-      background: linear-gradient(135deg,
-        rgba(6, 182, 212, 0.3) 0%,
-        rgba(16, 185, 129, 0.2) 100%);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-    .modal .modal-actions {
-      margin-top: 12px;
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-    .modal .confirm-logout {
-      /* 应用登录页面的主要按钮样式 */
-      background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-emerald) 100%);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      padding: 0.5rem 0.9rem;
-      font-weight: 600;
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
-    .modal .confirm-logout:hover {
-      background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-teal) 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4);
+    .modal-header {
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.1);
     }
 
-    .modal .cancel-logout {
-      background: transparent;
-      color: var(--accent-teal);
-      border: 2px solid var(--accent-teal);
-      border-radius: var(--radius);
-      padding: 0.4rem 0.75rem;
-      font-weight: 600;
-      min-height: var(--tap-size);
-      min-width: var(--tap-size);
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .modal .cancel-logout:hover {
-      background: rgba(6, 182, 212, 0.1);
-      border-color: var(--accent-emerald);
-      transform: translateY(-3px);
-    }
-    .modal[aria-hidden="false"], .modal.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .logout-overlay {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: var(--color-bg);
-      color: var(--color-primary-dark);
-      font-weight: 700;
+    .modal-title {
+      margin: 0;
       font-size: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 320ms ease;
+      font-weight: 600;
+      color: var(--color-text);
     }
-    .logged-out .logout-overlay {
-      opacity: 1;
-      pointer-events: auto;
+
+    .modal-body {
+      padding: 16px 24px;
     }
-    .load-sentinel {
-      height: 1px;
-    }
-    .loading {
-      text-align: center;
-      padding: 12px;
-      color: var(--color-primary-dark);
+
+    .modal-footer {
+      padding: 16px 24px 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
     }
 
     /* Toast通知 - 与登录页面一致 */
     .toast-notification {
       position: fixed;
-      top: 30px;
+      top: calc(var(--safe-area-top) + 20px);
       left: 50%;
       transform: translateX(-50%) translateY(-20px);
       background: linear-gradient(135deg, rgba(6, 182, 212, 0.95), rgba(16, 185, 129, 0.95));
       color: white;
-      padding: 16px 28px;
-      border-radius: 16px;
+      padding: 16px 24px;
+      border-radius: 12px;
       box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
-      z-index: 10000;
+      z-index: 3000;
       font-size: 15px;
       font-weight: 500;
       opacity: 0;
@@ -858,6 +867,8 @@
       border: 1px solid rgba(255, 255, 255, 0.2);
       letter-spacing: 0.3px;
       pointer-events: none;
+      max-width: 90vw;
+      text-align: center;
     }
 
     .toast-notification.show {
@@ -875,190 +886,326 @@
       box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
     }
 
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .profile-card {
+        padding: 20px 16px;
+      }
+
+      .profile-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .profile-details {
+        grid-template-columns: 1fr;
+      }
+
+      .edit-form {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .modal-content {
+        margin: 16px;
+        max-height: calc(100vh - 32px);
+      }
+    }
+
     @media (orientation: landscape) and (max-width: 812px) {
-      .top-region {
-        min-height: 32vh;
+      .profile-section {
+        margin-top: calc(var(--tap-size) + 16px);
       }
-      .reports-list {
-        grid-template-columns: 1fr 1fr;
+
+      .reports-section {
+        padding-bottom: 16px;
       }
+    }
+
+    /* 浮动操作按钮 - 移动端优化 */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--safe-area-bottom) + 24px);
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent-teal), var(--accent-emerald));
+      border-radius: 50%;
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 1000;
+      border: none;
+      color: white;
+    }
+
+    .fab:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(6, 182, 212, 0.5);
+    }
+
+    .fab:active {
+      transform: translateY(-2px) scale(0.95);
+    }
+
+    .fab svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* 下拉刷新指示器 */
+    .pull-to-refresh {
+      position: absolute;
+      top: -60px;
+      left: 0;
+      right: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-light);
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .pull-to-refresh.refreshing {
+      top: 0;
+    }
+
+    .refresh-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
     }
   </style>
 </head>
 <body>
-  <header role="region" aria-labelledby="patient-info-title" class="top-region">
-    <div class="patient-card">
+  <!-- 顶部导航栏 -->
+  <nav class="top-nav">
+    <div class="nav-title">健康档案</div>
+    <div class="nav-actions">
+      <button type="button" class="logout-btn" aria-haspopup="dialog" aria-controls="logout-dialog" title="退出登录">
+        <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 个人信息区域 -->
+  <section class="profile-section">
+    <div class="profile-card" id="profile-card">
       <div class="profile-header">
-        <img class="profile-bg" src="https://picsum.photos/seed/mountain-bg/1120/300.jpg" alt="背景图片">
-        <!-- 正圆头像 + 最外层 + 英文小字 -->
-        <div class="profile-avatar-wrapper">
-          <div class="profile-avatar-circle">
-            <img class="profile-avatar" src="https://picsum.photos/seed/user-avatar/300/300.jpg" alt="用户头像">
-            <input type="file" class="avatar-file-input" accept="image/*">
+        <div class="avatar-container">
+          <img class="profile-avatar" src="https://picsum.photos/seed/user-avatar/300/300.jpg" alt="用户头像" id="user-avatar">
+          <div class="avatar-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            <input type="file" class="avatar-file-input" accept="image/*" id="avatar-input">
           </div>
-          <span class="avatar-caption">Update Your Profile</span>
+        </div>
+        <div class="profile-info">
+          <h1 class="profile-name" id="user-name"><%= @user&.nickname || "用户昵称" %></h1>
+          <span class="profile-membership" id="user-membership"><%= @user&.membership_type || "次卡会员" %></span>
         </div>
       </div>
-      <div class="topbar">
-        <button type="button" class="logout-btn" aria-haspopup="dialog" aria-controls="logout-dialog" title="退出">
-          <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-        </button>
+
+      <div class="profile-details" id="profile-details">
+        <div class="detail-item">
+          <span class="detail-label">手机号</span>
+          <span class="detail-value" id="user-phone"><%= @user&.phone_number || "未设置" %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">邮箱</span>
+          <span class="detail-value" id="user-email"><%= @user&.email || "未设置" %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">密码</span>
+          <span class="detail-value password">••••••••</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">会员类型</span>
+          <span class="detail-value" id="user-membership-type"><%= @user&.membership_type || "次卡会员" %></span>
+        </div>
       </div>
-      <form id="edit-form" class="edit-form" novalidate aria-labelledby="edit-form-title" hidden>
-        <h2 id="edit-form-title" class="visually-hidden">编辑个人信息</h2>
+
+      <div class="edit-hint">双击个人信息区域进行编辑</div>
+
+      <form class="edit-form" id="edit-form" novalidate>
         <div class="form-row">
-          <label for="name">姓名</label>
-          <input id="name" name="name" type="text" required autocomplete="name">
+          <label for="edit-name">姓名</label>
+          <input id="edit-name" name="name" type="text" required autocomplete="name" placeholder="请输入姓名">
         </div>
         <div class="form-row">
-          <label for="email">邮箱</label>
-          <input id="email" name="email" type="email" required inputmode="email" autocomplete="email" placeholder="name@example.com">
+          <label for="edit-phone">手机号</label>
+          <input id="edit-phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel" placeholder="请输入手机号" pattern="^1[3-9]\d{9}$">
         </div>
         <div class="form-row">
-          <label for="phone">手机号</label>
-          <input id="phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel" placeholder="+8613812345678" pattern="^\+?\d{7,15}$">
+          <label for="edit-email">邮箱</label>
+          <input id="edit-email" name="email" type="email" required inputmode="email" autocomplete="email" placeholder="请输入邮箱">
+        </div>
+        <div class="form-row">
+          <label for="edit-password">新密码</label>
+          <input id="edit-password" name="password" type="password" placeholder="留空保持原密码">
+        </div>
+        <div class="form-row full-width">
+          <label for="edit-membership">会员类型</label>
+          <input id="edit-membership" name="membership" type="text" disabled value="<%= @user&.membership_type || "次卡会员" %>">
         </div>
         <div class="form-actions">
-          <button type="submit" class="save-btn">保存</button>
-          <button type="button" class="cancel-btn">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn btn-secondary" id="cancel-edit">取消</button>
         </div>
         <div class="form-msg" aria-live="polite"></div>
       </form>
     </div>
-  </header>
+  </section>
 
-  <main role="main" class="bottom-region" aria-labelledby="reports-title">
-    <h2 id="reports-title" class="visually-hidden">检查报告列表</h2>
-    <section class="reports-groups">
-      <section class="report-group" aria-labelledby="group-protein">
+  <!-- 报告列表区域 -->
+  <main class="reports-section">
+    <div class="reports-header">
+      <h2 class="reports-title">健康报告</h2>
+      <p class="reports-subtitle">查看您的各项健康检查结果</p>
+    </div>
+
+    <div class="report-groups" id="report-groups">
+      <!-- 蛋白质检查报告 -->
+      <div class="report-group">
         <div class="group-header">
-          <img class="group-icon-img" src="https://placehold.co/44x44.webp" alt="" width="44" height="44" loading="lazy">
-          <span class="group-icon" aria-hidden="true">🧪</span>
-          <h3 id="group-protein">蛋白质检查</h3>
+          <div class="group-icon">🧪</div>
+          <div class="group-title">
+            <h3>蛋白质检查</h3>
+            <div class="group-count">2 份报告</div>
+          </div>
+          <span class="group-status status-active">正常</span>
         </div>
-        <div role="list" class="reports-list type-protein">
-          <article role="listitem" class="report-item">
-            <details class="report-card" data-type="蛋白质检查">
-              <summary aria-controls="report-1-body" aria-expanded="false">
-                <div class="summary-left">
-                  <span class="report-type">蛋白质检查</span>
-                  <span class="report-date">2025-09-12</span>
-                </div>
-                <div class="summary-right">
-                  <span class="report-summary">CRP轻度升高，建议复查</span>
-                  <button type="button" class="details-btn">查看详情</button>
-                </div>
-              </summary>
-              <div id="report-1-body" class="report-body">
-                <div class="report-detail-row">
-                  <span class="key">项目</span>
-                  <span class="val">CRP</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">结果</span>
-                  <span class="val">12 mg/L</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">参考范围</span>
-                  <span class="val">0-10 mg/L</span>
-                </div>
+        <div class="reports-list">
+          <a href="#" class="report-item">
+            <div class="report-card">
+              <div class="report-header">
+                <h4 class="report-title">CRP检查报告</h4>
+                <span class="report-date">2025-09-12</span>
               </div>
-            </details>
-          </article>
-          <article role="listitem" class="report-item">
-            <details class="report-card" data-type="蛋白质检查">
-              <summary aria-controls="report-3-body" aria-expanded="false">
-                <div class="summary-left">
-                  <span class="report-type">蛋白质检查</span>
-                  <span class="report-date">2025-07-15</span>
-                </div>
-                <div class="summary-right">
-                  <span class="report-summary">总蛋白正常</span>
-                  <button type="button" class="details-btn">查看详情</button>
-                </div>
-              </summary>
-              <div id="report-3-body" class="report-body">
-                <div class="report-detail-row">
-                  <span class="key">项目</span>
-                  <span class="val">总蛋白</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">结果</span>
-                  <span class="val">72 g/L</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">参考范围</span>
-                  <span class="val">60-80 g/L</span>
-                </div>
+              <p class="report-summary">CRP轻度升高，建议复查。其他蛋白质指标均在正常范围内。</p>
+              <div class="report-tags">
+                <span class="report-tag tag-warning">轻度异常</span>
+                <span class="report-tag tag-normal">其他正常</span>
               </div>
-            </details>
-          </article>
+            </div>
+          </a>
+          <a href="#" class="report-item">
+            <div class="report-card">
+              <div class="report-header">
+                <h4 class="report-title">总蛋白检查</h4>
+                <span class="report-date">2025-07-15</span>
+              </div>
+              <p class="report-summary">总蛋白指标正常，营养状况良好，无需特殊处理。</p>
+              <div class="report-tags">
+                <span class="report-tag tag-normal">指标正常</span>
+              </div>
+            </div>
+          </a>
         </div>
-      </section>
-      <section class="report-group" aria-labelledby="group-gene">
+      </div>
+
+      <!-- 基因检查报告 -->
+      <div class="report-group">
         <div class="group-header">
-          <img class="group-icon-img" src="https://placehold.co/44x44.webp" alt="" width="44" height="44" loading="lazy">
-          <span class="group-icon" aria-hidden="true">🧬</span>
-          <h3 id="group-gene">基因检查</h3>
+          <div class="group-icon">🧬</div>
+          <div class="group-title">
+            <h3>基因检查</h3>
+            <div class="group-count">1 份报告</div>
+          </div>
+          <span class="group-status status-active">低风险</span>
         </div>
-        <div role="list" class="reports-list type-gene">
-          <article role="listitem" class="report-item">
-            <details class="report-card" data-type="基因检查">
-              <summary aria-controls="report-2-body" aria-expanded="false">
-                <div class="summary-left">
-                  <span class="report-type">基因检查</span>
-                  <span class="report-date">2025-08-03</span>
-                </div>
-                <div class="summary-right">
-                  <span class="report-summary">APOE ε3/ε3 常规风险</span>
-                  <button type="button" class="details-btn">查看详情</button>
-                </div>
-              </summary>
-              <div id="report-2-body" class="report-body">
-                <div class="report-detail-row">
-                  <span class="key">位点</span>
-                  <span class="val">APOE</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">基因型</span>
-                  <span class="val">ε3/ε3</span>
-                </div>
-                <div class="report-detail-row">
-                  <span class="key">解释</span>
-                  <span class="val">与人群平均风险一致</span>
-                </div>
+        <div class="reports-list">
+          <a href="#" class="report-item">
+            <div class="report-card">
+              <div class="report-header">
+                <h4 class="report-title">APOE基因检测</h4>
+                <span class="report-date">2025-08-03</span>
               </div>
-            </details>
-          </article>
+              <p class="report-summary">APOE ε3/ε3 常规风险，与人群平均风险一致，建议保持健康生活方式。</p>
+              <div class="report-tags">
+                <span class="report-tag tag-normal">常规风险</span>
+              </div>
+            </div>
+          </a>
         </div>
-      </section>
-    </section>
-    <div id="loading" class="loading" hidden>正在加载...</div>
-    <div id="load-sentinel" class="load-sentinel" aria-hidden="true"></div>
+      </div>
+
+      <!-- 其他检查报告（空状态示例） -->
+      <div class="report-group">
+        <div class="group-header">
+          <div class="group-icon">📊</div>
+          <div class="group-title">
+            <h3>血液检查</h3>
+            <div class="group-count">暂无报告</div>
+          </div>
+          <span class="group-status status-empty">暂无数据</span>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3 class="empty-title">暂无血液检查报告</h3>
+          <p class="empty-description">您还没有血液检查报告，建议定期进行血液检查以了解身体状况。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 加载更多 -->
+    <div class="loading-state" id="loading-more" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>正在加载更多报告...</p>
+    </div>
   </main>
 
-  <div id="logout-dialog" class="modal" role="dialog" aria-modal="true" aria-labelledby="logout-title" hidden>
+  <!-- 退出登录确认模态框 -->
+  <div class="modal" id="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-title">
     <div class="modal-content">
-      <h2 id="logout-title">确认退出登录</h2>
-      <p>确定要退出登录吗？</p>
-      <div class="modal-actions">
-        <button type="button" class="confirm-logout">退出</button>
-        <button type="button" class="cancel-logout">取消</button>
+      <div class="modal-header">
+        <h2 id="logout-title">确认退出登录</h2>
+      </div>
+      <div class="modal-body">
+        <p>确定要退出登录吗？退出后需要重新登录才能查看您的健康报告。</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancel-logout">取消</button>
+        <button type="button" class="btn btn-primary" id="confirm-logout">确认退出</button>
       </div>
     </div>
   </div>
-  <div id="logout-overlay" class="logout-overlay" hidden>已退出登录</div>
 
-  <!-- Toast通知 - 与登录页面一致 -->
+  <!-- 浮动操作按钮 -->
+  <button type="button" class="fab" id="refresh-btn" title="刷新数据">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+    </svg>
+  </button>
+
+  <!-- Toast通知 -->
   <div id="toast" class="toast-notification" role="status" aria-live="polite"></div>
 
   <script>
-    /* =============== Toast通知系统 - 与登录页面一致 =============== */
-    function showNotification(message, type = 'success') {
+    // Toast通知系统
+    function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       if (!toast) return;
 
@@ -1081,226 +1228,472 @@
       }, 3000);
     }
 
-    /* =============== 通用细节展开 =============== */
-    function setupDetails(d, indexBase) {
-      const summary = d.querySelector('summary');
-      const body = d.querySelector('.report-body');
-      if (summary && body) {
-        let bodyId = body.getAttribute('id');
-        if (!bodyId) {
-          bodyId = 'report-body-' + (indexBase || 0) + Math.random().toString(36).slice(2, 7);
-          body.setAttribute('id', bodyId);
+    // 个人信息编辑功能
+    class ProfileEditor {
+      constructor() {
+        this.profileCard = document.getElementById('profile-card');
+        this.editForm = document.getElementById('edit-form');
+        this.cancelBtn = document.getElementById('cancel-edit');
+        this.form = document.getElementById('edit-form');
+        this.isEditing = false;
+        this.lastTap = 0;
+        
+        this.init();
+      }
+
+      init() {
+        // 双击事件处理
+        this.profileCard.addEventListener('click', (e) => {
+          const currentTime = new Date().getTime();
+          const tapLength = currentTime - this.lastTap;
+          
+          if (tapLength < 500 && tapLength > 0) {
+            this.toggleEdit();
+            e.preventDefault();
+          }
+          
+          this.lastTap = currentTime;
+        });
+
+        // 表单提交
+        this.form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.saveProfile();
+        });
+
+        // 取消编辑
+        this.cancelBtn.addEventListener('click', () => {
+          this.cancelEdit();
+        });
+
+        // 头像上传
+        const avatarInput = document.getElementById('avatar-input');
+        avatarInput.addEventListener('change', (e) => {
+          this.handleAvatarUpload(e.target.files[0]);
+        });
+      }
+
+      toggleEdit() {
+        if (this.isEditing) {
+          this.cancelEdit();
+        } else {
+          this.startEdit();
         }
-        summary.setAttribute('aria-controls', bodyId);
-        summary.setAttribute('aria-expanded', d.open ? 'true' : 'false');
-      }
-      d.addEventListener('toggle', () => {
-        const s = d.querySelector('summary');
-        if (s) s.setAttribute('aria-expanded', d.open ? 'true' : 'false');
-      });
-    }
-    document.querySelectorAll('.report-card').forEach((d, i) => setupDetails(d, i + 1));
-
-    /* =============== 个人信息编辑 =============== */
-    const editBtn = document.querySelector('.edit-btn');
-    const form = document.getElementById('edit-form');
-    const formMsg = form?.querySelector('.form-msg');
-    const nameInput = document.getElementById('name');
-    const emailInput = document.getElementById('email');
-    const phoneInput = document.getElementById('phone');
-    const cancelBtn = form?.querySelector('.cancel-btn');
-    const displayName = document.getElementById('display-name');
-    const displayEmail = document.getElementById('display-email');
-    const displayPhone = document.getElementById('display-phone');
-
-    if (displayName) nameInput.value = displayName.textContent.trim();
-    if (displayEmail) emailInput.value = displayEmail.textContent.trim();
-    if (displayPhone) phoneInput.value = displayPhone.textContent.trim();
-
-    const validateEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-    const validatePhone = v => /^\+?\d{7,15}$/.test(v);
-
-    editBtn?.addEventListener('click', () => {
-      form.hidden = !form.hidden;
-      editBtn.setAttribute('aria-expanded', form.hidden ? 'false' : 'true');
-      if (!form.hidden) nameInput?.focus();
-    });
-    cancelBtn?.addEventListener('click', () => {
-      form.hidden = true;
-      editBtn.setAttribute('aria-expanded', 'false');
-      if (displayName) nameInput.value = displayName.textContent.trim();
-      if (displayEmail) emailInput.value = displayEmail.textContent.trim();
-      if (displayPhone) phoneInput.value = displayPhone.textContent.trim();
-      if (formMsg) formMsg.textContent = '';
-    });
-
-    form?.addEventListener('submit', e => {
-      e.preventDefault();
-      const nameVal = nameInput.value.trim();
-      const emailVal = emailInput.value.trim();
-      const phoneVal = phoneInput.value.trim();
-
-      // 使用通知系统显示错误
-      if (!nameVal) {
-        showNotification('请输入姓名', 'error');
-        return;
-      }
-      if (!validateEmail(emailVal)) {
-        showNotification('邮箱格式不正确', 'error');
-        return;
-      }
-      if (!validatePhone(phoneVal)) {
-        showNotification('手机号格式不正确（7-15位数字）', 'error');
-        return;
       }
 
-      if (displayName) displayName.textContent = nameVal;
-      if (displayEmail) displayEmail.textContent = emailVal;
-      if (displayPhone) displayPhone.textContent = phoneVal;
+      startEdit() {
+        this.isEditing = true;
+        this.editForm.classList.add('active');
+        
+        // 填充当前数据
+        const name = document.getElementById('user-name').textContent;
+        const phone = document.getElementById('user-phone').textContent;
+        const email = document.getElementById('user-email').textContent;
+        
+        document.getElementById('edit-name').value = name === '未设置' ? '' : name;
+        document.getElementById('edit-phone').value = phone === '未设置' ? '' : phone;
+        document.getElementById('edit-email').value = email === '未设置' ? '' : email;
+        
+        // 聚焦第一个输入框
+        setTimeout(() => {
+          document.getElementById('edit-name').focus();
+        }, 100);
+        
+        showToast('已进入编辑模式', 'info');
+      }
 
-      // 使用通知系统显示成功消息
-      showNotification('✨ 个人信息已更新', 'success');
+      cancelEdit() {
+        this.isEditing = false;
+        this.editForm.classList.remove('active');
+        this.form.reset();
+        showToast('已取消编辑', 'info');
+      }
 
-      setTimeout(() => {
-        form.hidden = true;
-        editBtn.setAttribute('aria-expanded', 'false');
-        if (formMsg) formMsg.textContent = '';
-      }, 600);
-    });
+      async saveProfile() {
+        const name = document.getElementById('edit-name').value.trim();
+        const phone = document.getElementById('edit-phone').value.trim();
+        const email = document.getElementById('edit-email').value.trim();
+        const password = document.getElementById('edit-password').value.trim();
 
-    /* =============== 退出登录模态框 =============== */
-    const logoutBtn = document.querySelector('.logout-btn');
-    const modal = document.getElementById('logout-dialog');
-    const overlay = document.getElementById('logout-overlay');
-    const confirmLogout = modal?.querySelector('.confirm-logout');
-    const cancelLogout = modal?.querySelector('.cancel-logout');
-
-    const openModal = () => {
-      modal?.classList.add('show');
-      modal?.removeAttribute('hidden');
-      modal?.setAttribute('aria-hidden', 'false');
-      cancelLogout?.focus();
-    };
-    const closeModal = () => {
-      modal?.classList.remove('show');
-      modal?.setAttribute('aria-hidden', 'true');
-      modal?.setAttribute('hidden', '');
-    };
-    logoutBtn?.addEventListener('click', openModal);
-    cancelLogout?.addEventListener('click', closeModal);
-    modal?.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-    window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-    confirmLogout?.addEventListener('click', () => {
-      closeModal();
-      showNotification('正在退出登录...', 'info');
-      setTimeout(() => {
-        document.body.classList.add('logged-out');
-        overlay?.removeAttribute('hidden');
-      }, 500);
-    });
-
-    /* =============== 无限滚动加载 =============== */
-    const sentinel = document.getElementById('load-sentinel');
-    const loading = document.getElementById('loading');
-    let loads = 0;
-    const maxLoads = 3;
-    let isLoading = false;
-    const proteinList = document.querySelector('.reports-list.type-protein');
-    const geneList = document.querySelector('.reports-list.type-gene');
-
-    const createReportItem = item => {
-      const article = document.createElement('article');
-      article.setAttribute('role', 'listitem');
-      article.className = 'report-item';
-      const det = document.createElement('details');
-      det.className = 'report-card';
-      det.setAttribute('data-type', item.type);
-      const sum = document.createElement('summary');
-      sum.innerHTML = `
-        <div class="summary-left">
-          <span class="report-type">${item.type}</span>
-          <span class="report-date">${item.date}</span>
-        </div>
-        <div class="summary-right">
-          <span class="report-summary">${item.summary}</span>
-          <button type="button" class="details-btn">查看详情</button>
-        </div>`;
-      const body = document.createElement('div');
-      body.className = 'report-body';
-      item.details.forEach(([k, v]) => {
-        const row = document.createElement('div');
-        row.className = 'report-detail-row';
-        row.innerHTML = `<span class="key">${k}</span><span class="val">${v}</span>`;
-        body.appendChild(row);
-      });
-      det.append(sum, body);
-      article.appendChild(det);
-      return article;
-    };
-
-    const loadMore = () => {
-      if (loads >= maxLoads || isLoading) return;
-      isLoading = true;
-      loading?.removeAttribute('hidden');
-      setTimeout(() => {
-        for (let i = 0; i < 4; i++) {
-          const type = Math.random() < 0.5 ? '蛋白质检查' : '基因检查';
-          const date = new Date(Date.now() - (i + loads) * 86400000).toISOString().slice(0, 10);
-          const summary = type === '蛋白质检查' ? '蛋白指标更新' : '基因位点分析更新';
-          const details = type === '蛋白质检查'
-            ? [['项目', '白蛋白'], ['结果', '66 g/L'], ['参考范围', '35-50 g/L']]
-            : [['位点', 'MTHFR'], ['变异', 'C677T'], ['解释', '需结合临床']];
-          const node = createReportItem({ type, date, summary, details });
-          (type === '蛋白质检查' ? proteinList : geneList)?.appendChild(node);
-          setupDetails(node.querySelector('.report-card'));
+        // 验证
+        if (!name) {
+          showToast('请输入姓名', 'error');
+          return;
         }
-        loads++;
-        isLoading = false;
-        loading?.setAttribute('hidden', '');
-      }, 500);
-    };
 
-    if ('IntersectionObserver' in window && sentinel) {
-      const io = new IntersectionObserver(entries => {
-        entries.forEach(en => en.isIntersecting && loadMore());
-      }, { root: document.querySelector('.bottom-region'), threshold: 0.1 });
-      io.observe(sentinel);
-    }
-
-    /* =============== 左右滑动切换分组 =============== */
-    const bottomRegion = document.querySelector('.bottom-region');
-    const groups = [...document.querySelectorAll('.report-group')];
-    if (bottomRegion && groups.length) {
-      let tsX = 0, tsY = 0, tTime = 0;
-      bottomRegion.addEventListener('touchstart', e => {
-        const t = e.changedTouches[0];
-        tsX = t.clientX; tsY = t.clientY; tTime = Date.now();
-      }, { passive: true });
-      bottomRegion.addEventListener('touchend', e => {
-        const t = e.changedTouches[0];
-        const dx = t.clientX - tsX, dy = t.clientY - tsY, dt = Date.now() - tTime;
-        if (dt < 800 && Math.abs(dx) > 50 && Math.abs(dy) < 30) {
-          const currentScroll = bottomRegion.scrollTop;
-          const tops = groups.map(g => g.getBoundingClientRect().top + currentScroll);
-          let idx = 0;
-          for (let i = 0; i < tops.length; i++) if (tops[i] - currentScroll <= 20) idx = i;
-          const targetIdx = dx < 0 ? Math.min(idx + 1, groups.length - 1) : Math.max(idx - 1, 0);
-          groups[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!this.validatePhone(phone)) {
+          showToast('请输入正确的手机号', 'error');
+          return;
         }
-      }, { passive: true });
+
+        if (!this.validateEmail(email)) {
+          showToast('请输入正确的邮箱', 'error');
+          return;
+        }
+
+        try {
+          // 调用API保存数据
+          const response = await fetch('/health_reports/update_profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+              nickname: name,
+              phone_number: phone,
+              email: email,
+              password: password
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // 更新显示
+            this.updateDisplay(name, phone, email);
+            this.isEditing = false;
+            this.editForm.classList.remove('active');
+            showToast('✨ 个人信息已更新', 'success');
+          } else {
+            showToast(result.error || '更新失败，请重试', 'error');
+          }
+        } catch (error) {
+          console.error('更新个人信息失败:', error);
+          showToast('网络错误，请稍后重试', 'error');
+        }
+      }
+
+      updateDisplay(name, phone, email) {
+        document.getElementById('user-name').textContent = name;
+        document.getElementById('user-phone').textContent = phone;
+        document.getElementById('user-email').textContent = email;
+      }
+
+      validatePhone(phone) {
+        return /^1[3-9]\d{9}$/.test(phone);
+      }
+
+      validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      async handleAvatarUpload(file) {
+        if (!file || !file.type.startsWith('image/')) {
+          showToast('请选择图片文件', 'error');
+          return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+          showToast('头像文件不能超过 2MB', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+          showToast('正在上传头像...', 'info');
+          
+          const response = await fetch('/health_reports/upload_avatar', {
+            method: 'POST',
+            headers: {
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            document.getElementById('user-avatar').src = result.avatar_url;
+            showToast('✨ 头像已更新', 'success');
+          } else {
+            showToast(result.error || '头像上传失败', 'error');
+          }
+        } catch (error) {
+          console.error('头像上传失败:', error);
+          showToast('网络错误，请稍后重试', 'error');
+        }
+      }
     }
 
-    /* =============== 正圆头像上传 =============== */
-    const avatarInput = document.querySelector('.avatar-file-input');
-    const avatarImg   = document.querySelector('.profile-avatar');
-    avatarInput?.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file || !file.type.startsWith('image/')) return;
-      if (file.size > 2 * 1024 * 1024) { alert('头像文件不能超过 2MB'); return; }
-      const reader = new FileReader();
-      reader.onload = evt => avatarImg.src = evt.target.result;
-      reader.readAsDataURL(file);
+    // 退出登录功能
+    class LogoutManager {
+      constructor() {
+        this.logoutBtn = document.querySelector('.logout-btn');
+        this.modal = document.getElementById('logout-modal');
+        this.confirmBtn = document.getElementById('confirm-logout');
+        this.cancelBtn = document.getElementById('cancel-logout');
+        
+        this.init();
+      }
+
+      init() {
+        this.logoutBtn.addEventListener('click', () => {
+          this.showModal();
+        });
+
+        this.confirmBtn.addEventListener('click', () => {
+          this.confirmLogout();
+        });
+
+        this.cancelBtn.addEventListener('click', () => {
+          this.hideModal();
+        });
+
+        // 点击模态框背景关闭
+        this.modal.addEventListener('click', (e) => {
+          if (e.target === this.modal) {
+            this.hideModal();
+          }
+        });
+
+        // ESC键关闭
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && this.modal.classList.contains('active')) {
+            this.hideModal();
+          }
+        });
+      }
+
+      showModal() {
+        this.modal.classList.add('active');
+        this.cancelBtn.focus();
+      }
+
+      hideModal() {
+        this.modal.classList.remove('active');
+      }
+
+      confirmLogout() {
+        this.hideModal();
+        showToast('正在退出登录...', 'info');
+        
+        // 模拟退出登录
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
+      }
+    }
+
+    // 报告列表管理
+    class ReportManager {
+      constructor() {
+        this.reportGroups = document.getElementById('report-groups');
+        this.loadingMore = document.getElementById('loading-more');
+        this.refreshBtn = document.getElementById('refresh-btn');
+        this.isLoading = false;
+        this.currentPage = 1;
+        
+        this.init();
+      }
+
+      init() {
+        this.refreshBtn.addEventListener('click', () => {
+          this.refreshReports();
+        });
+
+        // 无限滚动
+        this.setupInfiniteScroll();
+
+        // 报告卡片点击事件
+        this.setupReportClicks();
+      }
+
+      setupInfiniteScroll() {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && !this.isLoading) {
+              this.loadMoreReports();
+            }
+          });
+        }, {
+          root: null,
+          rootMargin: '100px',
+          threshold: 0.1
+        });
+
+        // 创建观察目标
+        const sentinel = document.createElement('div');
+        sentinel.style.height = '1px';
+        sentinel.style.visibility = 'hidden';
+        document.querySelector('.reports-section').appendChild(sentinel);
+        observer.observe(sentinel);
+      }
+
+      setupReportClicks() {
+        this.reportGroups.addEventListener('click', (e) => {
+          const reportCard = e.target.closest('.report-card');
+          if (reportCard) {
+            e.preventDefault();
+            this.openReport(reportCard);
+          }
+        });
+      }
+
+      openReport(reportCard) {
+        const title = reportCard.querySelector('.report-title').textContent;
+        const date = reportCard.querySelector('.report-date').textContent;
+        
+        showToast(`正在打开 ${title} (${date})...`, 'info');
+        
+        // 模拟打开报告详情
+        setTimeout(() => {
+          // 这里可以跳转到报告详情页或打开模态框
+          console.log(`打开报告: ${title}`);
+        }, 500);
+      }
+
+      refreshReports() {
+        if (this.isLoading) return;
+        
+        this.isLoading = true;
+        showToast('正在刷新报告列表...', 'info');
+        
+        // 模拟刷新
+        setTimeout(() => {
+          this.isLoading = false;
+          showToast('✨ 报告列表已更新', 'success');
+        }, 1500);
+      }
+
+      loadMoreReports() {
+        if (this.isLoading || this.currentPage >= 3) return;
+        
+        this.isLoading = true;
+        this.loadingMore.style.display = 'block';
+        
+        // 模拟加载更多
+        setTimeout(() => {
+          this.addMoreReports();
+          this.isLoading = false;
+          this.loadingMore.style.display = 'none';
+          this.currentPage++;
+        }, 1000);
+      }
+
+      addMoreReports() {
+        // 这里可以添加更多报告数据
+        console.log(`加载第 ${this.currentPage + 1} 页报告`);
+      }
+    }
+
+    // 下拉刷新功能
+    class PullToRefresh {
+      constructor() {
+        this.reportsSection = document.querySelector('.reports-section');
+        this.pullToRefresh = null;
+        this.isRefreshing = false;
+        this.startY = 0;
+        this.currentY = 0;
+        
+        this.init();
+      }
+
+      init() {
+        this.createPullToRefresh();
+        this.setupTouchEvents();
+      }
+
+      createPullToRefresh() {
+        this.pullToRefresh = document.createElement('div');
+        this.pullToRefresh.className = 'pull-to-refresh';
+        this.pullToRefresh.innerHTML = `
+          <div class="refresh-spinner"></div>
+          <span>下拉刷新</span>
+        `;
+        this.reportsSection.insertBefore(this.pullToRefresh, this.reportsSection.firstChild);
+      }
+
+      setupTouchEvents() {
+        let touchStartY = 0;
+        let touchEndY = 0;
+        let isPulling = false;
+
+        this.reportsSection.addEventListener('touchstart', (e) => {
+          if (this.reportsSection.scrollTop === 0) {
+            touchStartY = e.touches[0].clientY;
+            isPulling = true;
+          }
+        }, { passive: true });
+
+        this.reportsSection.addEventListener('touchmove', (e) => {
+          if (!isPulling || this.isRefreshing) return;
+          
+          touchEndY = e.touches[0].clientY;
+          const pullDistance = touchEndY - touchStartY;
+          
+          if (pullDistance > 0 && this.reportsSection.scrollTop === 0) {
+            e.preventDefault();
+            
+            if (pullDistance > 60) {
+              this.pullToRefresh.classList.add('refreshing');
+              this.pullToRefresh.querySelector('span').textContent = '释放刷新';
+            } else {
+              this.pullToRefresh.classList.remove('refreshing');
+              this.pullToRefresh.querySelector('span').textContent = '下拉刷新';
+            }
+            
+            this.pullToRefresh.style.transform = `translateY(${Math.min(pullDistance, 80)}px)`;
+          }
+        }, { passive: false });
+
+        this.reportsSection.addEventListener('touchend', (e) => {
+          if (!isPulling || this.isRefreshing) return;
+          
+          isPulling = false;
+          const pullDistance = touchEndY - touchStartY;
+          
+          if (pullDistance > 60) {
+            this.refresh();
+          } else {
+            this.resetPullToRefresh();
+          }
+        });
+      }
+
+      refresh() {
+        this.isRefreshing = true;
+        this.pullToRefresh.querySelector('span').textContent = '刷新中...';
+        
+        // 模拟刷新
+        setTimeout(() => {
+          showToast('✨ 数据已刷新', 'success');
+          this.resetPullToRefresh();
+          this.isRefreshing = false;
+        }, 1500);
+      }
+
+      resetPullToRefresh() {
+        this.pullToRefresh.classList.remove('refreshing');
+        this.pullToRefresh.style.transform = '';
+        this.pullToRefresh.querySelector('span').textContent = '下拉刷新';
+      }
+    }
+
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', () => {
+      new ProfileEditor();
+      new LogoutManager();
+      new ReportManager();
+      new PullToRefresh();
+      
+      // 显示欢迎消息
+      setTimeout(() => {
+        showToast('🎉 欢迎回来！', 'success');
+      }, 1000);
     });
+
+    // 防止iOS橡皮筋效果
+    document.addEventListener('touchmove', (e) => {
+      if (e.target.closest('.reports-section')) {
+        const element = e.target.closest('.reports-section');
+        if (element.scrollTop === 0 && e.touches[0].clientY > element.clientHeight) {
+          e.preventDefault();
+        }
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
