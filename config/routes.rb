@@ -26,10 +26,12 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
   get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 
+  # 用户管理路由 - 完整的 RESTful 路由
+  resources :users
 
+  # 健康档案路由
   get "health_report" => "health_reports#index", as: :health_report 
 
-  get "users" => "users#index", as: :users
   # Defines the root path route ("/")
   root to:"login#index"
 end

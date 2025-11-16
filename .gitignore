@@ -52,3 +52,5 @@ test_health_report_optimization.md
 AUTHENTICATION_TEST_GUIDE.md
 AUTHENTICATION_IMPLEMENTATION_SUMMARY.md
 FINAL_TEST_REPORT.md
+
+test_user_management.rb

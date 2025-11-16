@@ -48,30 +48,37 @@ else
   puts "✅ 测试用户已更新！"
 end
 
-# 创建健康报告
-protein_report = HealthReport.find_or_create_by!(user: user, report_type: '蛋白质检测报告') do |report|
-  report.report_path = '/reports/protein_report_2025.pdf'
-  report.report_icon_path = 'https://placehold.co/44x44/06b6d4/white?text=🧪'
+# 创建50个测试用户
+puts "创建测试用户数据..."
+
+membership_types = ['次卡会员', '月卡会员', '年卡会员', '其他会员类别']
+roles = ['admin', 'user']
+statuses = ['active', 'inactive', 'suspended']  # 修正为数据库支持的枚举值
+
+50.times do |i|
+  phone = "138#{sprintf('%08d', i + 10000000)}"
+  
+  # 跳过已存在的手机号
+  next if User.exists?(phone_number: phone)
+  
+  User.create!(
+    phone_number: phone,
+    email: "user#{i}@test.com",
+    nickname: "测试用户#{i}",
+    password: "password123",
+    role: roles.sample,
+    status: statuses.sample,
+    membership_type: membership_types.sample
+  )
+  
+  print "."
+  puts if (i + 1) % 10 == 0
 end
 
-gene_report = HealthReport.find_or_create_by!(user: user, report_type: '基因检查报告') do |report|
-  report.report_path = '/reports/gene_report_2025.pdf'
-  report.report_icon_path = 'https://placehold.co/44x44/10b981/white?text=🧬'
-end
-
-puts "\n✨ 测试数据创建成功！"
-puts "\n📊 账号信息汇总："
-puts "=" * 50
-puts "【超级管理员】"
-puts "  手机号: #{admin.phone_number}"
-puts "  密码: xixiHealth"
-puts "  角色: #{admin.role}"
-puts "  昵称: #{admin.nickname}"
-puts "\n【普通用户】"
-puts "  手机号: #{user.phone_number}"
-puts "  密码: password123"
-puts "  角色: #{user.role}"
-puts "  昵称: #{user.nickname}"
-puts "  会员类型: #{user.membership_type}"
-puts "  健康报告: #{user.health_reports.count} 份"
-puts "=" * 50
+puts "\n✅ 测试用户创建完成！"
+puts "📊 总计用户数量: #{User.count}"
+puts "👥 管理员用户: #{User.where(role: 'admin').count}"
+puts "👤 普通用户: #{User.where(role: 'user').count}"
+puts "✅ 活跃用户: #{User.where(status: 'active').count}"
+puts "🚫 禁用用户: #{User.where(status: 'inactive').count}"
+puts "⏸️ 暂停用户: #{User.where(status: 'suspended').count}"

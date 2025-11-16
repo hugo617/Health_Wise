@@ -1,42 +1,771 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户列表</title>
+    <title>用户管理 - 烯晞数字健康档案系统</title>
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
+        :root {
+            --primary-blue: #667eea;
+            --secondary-purple: #764ba2;
+            --accent-teal: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --shadow-light: rgba(255, 255, 255, 0.5);
+            --shadow-dark: rgba(0, 0, 0, 0.1);
         }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .content-header h1 {
+            font-size: 1.75rem;
+            color: white;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            color: white;
+            border-bottom: none;
+            border-radius: 1rem 1rem 0 0 !important;
+            font-weight: 600;
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid #e3e6f0;
+            font-weight: 600;
+            color: var(--dark-color);
+            background: #f8f9fc;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-circle {
+            width: 2.2rem;
+            height: 2.2rem;
+            padding: 0;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 0.9rem;
+            line-height: 2.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-circle:hover {
+            transform: scale(1.1);
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+        }
+        
+        .filter-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3rem;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        .toast {
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        
+        .sortable:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .sort-indicator {
+            font-size: 0.8em;
+            margin-left: 0.5rem;
+            opacity: 0.6;
+        }
+        
+        .role-admin {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+        
+        .role-user {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+        
+        .status-active {
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: white;
+        }
+        
+        .status-inactive {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            color: white;
+        }
+        
+        .status-banned {
+            background: linear-gradient(135deg, var(--accent-rose), #dc2626);
+            color: white;
+        }
+        
+        .pagination {
+            margin-bottom: 0;
+        }
+        
+        .page-link {
+            border-radius: 0.5rem;
+            margin: 0 0.25rem;
+            border: none;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--primary-blue);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .page-link:hover, .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .content-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+            
+            .btn-circle {
+                width: 1.8rem;
+                height: 1.8rem;
+                line-height: 1.8rem;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>用户列表</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>手机号码</th>
-                <th>邮箱</th>
-                <th>昵称</th>
-                <th>会员类型</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% @users.each do |user| %>
+    <!-- 加载状态指示器 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+
+    <!-- 页面标题和操作按钮 -->
+    <div class="content-header">
+        <h1><i class="fas fa-users me-3"></i>用户管理</h1>
+        <a href="/users/new" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>新建用户
+        </a>
+    </div>
+
+    <!-- 搜索和筛选区 -->
+    <div class="filter-section">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="searchInput" class="form-label">
+                    <i class="fas fa-search me-2"></i>关键字搜索
+                </label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜索手机号/昵称/邮箱">
+                    <button class="btn btn-primary" type="button" id="searchBtn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="roleFilter" class="form-label">
+                    <i class="fas fa-user-tag me-2"></i>角色筛选
+                </label>
+                <select class="form-select" id="roleFilter">
+                    <option value="">全部角色</option>
+                    <option value="admin">管理员</option>
+                    <option value="user">普通用户</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">
+                    <i class="fas fa-user-check me-2"></i>状态筛选
+                </label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">全部状态</option>
+                    <option value="active">正常</option>
+                    <option value="inactive">禁用</option>
+                    <option value="suspended">暂停</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-secondary me-2" id="resetFilterBtn">
+                    <i class="fas fa-redo me-1"></i>重置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户列表表格 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-list me-2"></i>用户列表</span>
+            <div class="d-flex align-items-center">
+                <span class="me-2">每页显示</span>
+                <select class="form-select form-select-sm w-auto" id="perPageSelect">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+                <span class="ms-2">条记录</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="id" width="8%">
+                                ID <span class="sort-indicator">↕</span>
+                            </th>
+                            <th class="sortable" data-sort="phone_number" width="12%">
+                                手机号 <span class="sort-indicator">↕</span>
+                            </th>
+                            <th width="18%">昵称</th>
+                            <th width="20%">邮箱</th>
+                            <th width="10%">角色</th>
+                            <th width="10%">状态</th>
+                            <th width="12%">会员类型</th>
+                            <th class="sortable" data-sort="created_at" width="15%">
+                                创建时间 <span class="sort-indicator">↕</span>
+                            </th>
+                            <th width="15%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- 数据将通过Ajax加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted">共 <span id="totalCount">0</span> 条记录</span>
+                <span class="text-muted ms-3">第 <span id="currentPage">1</span> 页 / 共 <span id="totalPages">1</span> 页</span>
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm" id="pagination">
+                    <!-- 分页将通过Ajax加载 -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container">
+        <div class="toast" id="notificationToast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toastTitle">通知</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                操作成功完成！
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 全局变量
+        let currentPage = 1;
+        let currentPerPage = 10;
+        let currentSort = 'created_at';
+        let currentOrder = 'desc';
+        let isLoading = false;
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            isLoading = true;
+        }
+
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            isLoading = false;
+        }
+
+        // 显示通知消息
+        function showNotification(title, message, type = 'success') {
+            const toast = document.getElementById('notificationToast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            // 设置通知类型样式
+            toast.className = 'toast';
+            if (type === 'success') {
+                toast.classList.add('bg-success', 'text-white');
+            } else if (type === 'error') {
+                toast.classList.add('bg-danger', 'text-white');
+            } else if (type === 'warning') {
+                toast.classList.add('bg-warning');
+            } else if (type === 'info') {
+                toast.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+        }
+
+        // 加载用户列表
+        function loadUsers(params = {}) {
+            if (isLoading) return;
+            
+            showLoading();
+            
+            // 构建请求参数
+            const requestParams = {
+                page: currentPage,
+                per_page: currentPerPage,
+                sort: currentSort,
+                order: currentOrder,
+                search: document.getElementById('searchInput').value.trim(),
+                role: document.getElementById('roleFilter').value,
+                status: document.getElementById('statusFilter').value,
+                ...params
+            };
+            
+            // 构建查询字符串
+            const queryString = new URLSearchParams(requestParams).toString();
+            
+            fetch(`/users.json?${queryString}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // 更新表格内容
+                updateTableContent(data.users);
+                
+                // 更新分页信息
+                updatePagination(data);
+                
+                // 更新排序指示器
+                updateSortIndicators();
+                
+                hideLoading();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('加载用户列表失败:', error);
+                showNotification('错误', `加载失败: ${error.message}`, 'error');
+                
+                // 显示空状态
+                document.getElementById('usersTableBody').innerHTML = 
+                    '<tr><td colspan="9" class="text-center text-muted py-4">加载失败，请重试</td></tr>';
+            });
+        }
+
+        // 更新表格内容
+        function updateTableContent(users) {
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = users.map(user => `
                 <tr>
-                    <td><%= user.phone_number %></td>
-                    <td><%= user.email %></td>
-                    <td><%= user.nickname %></td>
-                    <td><%= user.membership_type %></td>
+                    <td>${user.id}</td>
+                    <td>${user.phone_number}</td>
+                    <td>${user.nickname}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span class="badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}">
+                            ${user.role === 'admin' ? '管理员' : '普通用户'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge status-${user.status}">
+                            ${getStatusText(user.status)}
+                        </span>
+                    </td>
+                    <td><span class="badge bg-secondary">${user.membership_type}</span></td>
+                    <td>${formatDateTime(user.created_at)}</td>
+                    <td class="action-buttons">
+                        <a href="/users/${user.id}" class="btn btn-sm btn-info btn-circle" title="查看">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="/users/${user.id}/edit" class="btn btn-sm btn-warning btn-circle" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="btn btn-sm btn-danger btn-circle" title="删除" 
+                                onclick="deleteUser(${user.id}, '${user.nickname}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>
-            <% end %>
-        </tbody>
-    </table>
+            `).join('');
+        }
+
+        // 更新分页信息
+        function updatePagination(data) {
+            // 更新统计信息
+            document.getElementById('totalCount').textContent = data.total;
+            document.getElementById('currentPage').textContent = data.page;
+            document.getElementById('totalPages').textContent = data.total_pages;
+            
+            // 更新分页控件
+            const pagination = document.getElementById('pagination');
+            
+            if (data.total_pages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
+            
+            // 上一页按钮
+            if (data.page > 1) {
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${data.page - 1}); return false;">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                `;
+            } else {
+                paginationHTML += `
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                    </li>
+                `;
+            }
+            
+            // 页码显示
+            const startPage = Math.max(1, data.page - 2);
+            const endPage = Math.min(data.total_pages, data.page + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === data.page) {
+                    paginationHTML += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+                } else {
+                    paginationHTML += `
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                        </li>
+                    `;
+                }
+            }
+            
+            // 下一页按钮
+            if (data.page < data.total_pages) {
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${data.page + 1}); return false;">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                `;
+            } else {
+                paginationHTML += `
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </li>
+                `;
+            }
+            
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 更新排序指示器
+        function updateSortIndicators() {
+            document.querySelectorAll('.sortable').forEach(th => {
+                const sortField = th.dataset.sort;
+                const indicator = th.querySelector('.sort-indicator');
+                
+                if (sortField === currentSort) {
+                    indicator.textContent = currentOrder === 'asc' ? '↑' : '↓';
+                    th.style.background = 'rgba(102, 126, 234, 0.1)';
+                } else {
+                    indicator.textContent = '↕';
+                    th.style.background = '';
+                }
+            });
+        }
+
+        // 搜索用户
+        function searchUsers() {
+            currentPage = 1; // 重置到第一页
+            loadUsers();
+        }
+
+        // 重置筛选条件
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('roleFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            currentPage = 1;
+            loadUsers();
+            showNotification('重置', '筛选条件已重置', 'info');
+        }
+
+        // 排序功能
+        function sortBy(field) {
+            if (currentSort === field) {
+                // 切换排序方向
+                currentOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                // 新的排序字段，默认降序
+                currentSort = field;
+                currentOrder = 'desc';
+            }
+            
+            currentPage = 1; // 重置到第一页
+            loadUsers();
+        }
+
+        // 删除用户
+        function deleteUser(userId, userName) {
+            if (confirm(`确定要删除用户 "${userName}" 吗？此操作不可撤销。`)) {
+                showLoading();
+                
+                fetch(`/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().catch(() => ({ success: true }));
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.error || '删除失败');
+                        });
+                    }
+                })
+                .then(data => {
+                    hideLoading();
+                    if (data.success !== false) {
+                        showNotification('成功', '用户删除成功！', 'success');
+                        loadUsers(); // 刷新列表
+                    } else {
+                        throw new Error(data.error || '删除失败');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('删除用户失败:', error);
+                    showNotification('错误', `删除失败: ${error.message}`, 'error');
+                });
+            }
+        }
+
+        // 切换页码
+        function changePage(page) {
+            if (page !== currentPage && page > 0) {
+                currentPage = page;
+                loadUsers();
+            }
+        }
+
+        // 改变每页记录数
+        function changePerPage() {
+            const newPerPage = parseInt(document.getElementById('perPageSelect').value);
+            if (newPerPage !== currentPerPage) {
+                currentPerPage = newPerPage;
+                currentPage = 1; // 重置到第一页
+                loadUsers();
+            }
+        }
+
+        // 工具函数：获取状态文本
+        function getStatusText(status) {
+            const statusMap = {
+                'active': '正常',
+                'inactive': '禁用',
+                'suspended': '暂停'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 工具函数：格式化日期时间
+        function formatDateTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 事件绑定
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始加载数据
+            loadUsers();
+            
+            // 搜索框实时搜索（防抖 500ms）
+            const debouncedSearch = debounce(searchUsers, 500);
+            document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+            
+            // 搜索按钮点击
+            document.getElementById('searchBtn').addEventListener('click', searchUsers);
+            
+            // 筛选器改变时触发搜索
+            document.getElementById('roleFilter').addEventListener('change', searchUsers);
+            document.getElementById('statusFilter').addEventListener('change', searchUsers);
+            
+            // 重置按钮
+            document.getElementById('resetFilterBtn').addEventListener('click', resetFilters);
+            
+            // 每页记录数改变
+            document.getElementById('perPageSelect').addEventListener('change', changePerPage);
+            
+            // 表头排序点击
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.addEventListener('click', function() {
+                    sortBy(this.dataset.sort);
+                });
+            });
+        });
+    </script>
 </body>
 </html>
