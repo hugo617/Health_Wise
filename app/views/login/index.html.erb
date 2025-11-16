@@ -893,7 +893,7 @@
 
         function sendVerifyCode() {
             const phone = document.getElementById('phone').value.trim();
-            
+
             if (!phone) {
                 showError('phoneError', '请输入手机号');
                 return;
@@ -906,27 +906,49 @@
 
             hideError('phoneError');
 
-            // 模拟发送验证码
             const btn = document.getElementById('sendCodeBtn');
-            countdown = 60;
             btn.disabled = true;
-            btn.textContent = `${countdown}秒后重试`;
+            btn.textContent = '发送中...';
 
-            const timer = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
+            // 发送真实短信验证码
+            fetch('/login/send_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone_number: phone })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('✨ ' + data.message, 'success');
+
+                    // 开始倒计时
+                    countdown = 60;
                     btn.textContent = `${countdown}秒后重试`;
+
+                    const timer = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            btn.textContent = `${countdown}秒后重试`;
+                        } else {
+                            clearInterval(timer);
+                            btn.disabled = false;
+                            btn.textContent = '获取验证码';
+                        }
+                    }, 1000);
                 } else {
-                    clearInterval(timer);
+                    showNotification('❌ ' + data.error, 'error');
                     btn.disabled = false;
                     btn.textContent = '获取验证码';
                 }
-            }, 1000);
-
-            // 模拟验证码发送成功
-            setTimeout(() => {
-                showNotification('✨ 验证码已发送：123456', 'success');
-            }, 500);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ 网络错误，请稍后重试', 'error');
+                btn.disabled = false;
+                btn.textContent = '获取验证码';
+            });
         }
 
         function loginWithCode() {
@@ -956,7 +978,31 @@
             hideError('phoneError');
             hideError('codeError');
 
-            showNotification(`🎉 手机号 ${phone} 登录成功！`, 'success');
+            // 验证验证码并登录
+            fetch('/login/verify_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone_number: phone, code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`🎉 ${data.message}！欢迎 ${data.user.nickname}`, 'success');
+
+                    // 登录成功后跳转到健康档案页面
+                    setTimeout(() => {
+                        window.location.href = '/health_report';
+                    }, 1500);
+                } else {
+                    showNotification('❌ ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ 网络错误，请稍后重试', 'error');
+            });
         }
 
         function loginWithPassword() {

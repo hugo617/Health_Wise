@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   get "health_reports/index"
   get "users/index"
   get "login/index"
+
+  # 短信验证码登录接口
+  post "login/send_code", to: "login#send_code"
+  post "login/verify_code", to: "login#verify_code"
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
