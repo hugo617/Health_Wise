@@ -1032,7 +1032,35 @@
             hideError('phonePasswordError');
             hideError('passwordError');
 
-            showNotification(`🎉 手机号 ${phone} 登录成功！`, 'success');
+            // 调用密码登录 API
+            fetch('/login/authenticate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    phone_number: phone,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`✅ ${data.message}`, 'success');
+                    console.log('登录成功，用户信息:', data.user);
+
+                    // 1.5秒后跳转到健康档案页面
+                    setTimeout(() => {
+                        window.location.href = '/health_report';
+                    }, 1500);
+                } else {
+                    showNotification(`❌ ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ 网络错误，请稍后重试', 'error');
+            });
         }
 
         function togglePassword() {

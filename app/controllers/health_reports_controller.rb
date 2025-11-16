@@ -1,6 +1,7 @@
 class HealthReportsController < ApplicationController
-  before_action :authenticate_user!
-  
+  # 已经在 ApplicationController 中有 require_login，这里不需要重复
+  # 普通用户可以访问健康档案
+
   def index
     @user = current_user
     @health_reports = @user.health_reports.order(created_at: :desc)
@@ -60,25 +61,6 @@ class HealthReportsController < ApplicationController
   end
 
   private
-
-  def authenticate_user!
-    # 模拟用户认证 - 实际项目中应该使用真实的认证机制
-    @current_user = User.first || create_default_user
-  end
-
-  def current_user
-    @current_user
-  end
-
-  def create_default_user
-    User.create!(
-      phone_number: '13800138000',
-      email: 'user@example.com',
-      nickname: '健康用户',
-      password: 'password123',
-      membership_type: '次卡会员'
-    )
-  end
 
   def profile_params
     params.permit(:nickname, :phone_number, :email, :password)

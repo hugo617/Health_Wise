@@ -3,9 +3,12 @@ Rails.application.routes.draw do
   get "users/index"
   get "login/index"
 
-  # 短信验证码登录接口
+  # 登录相关路由
+  get "login", to: "login#index", as: :login
   post "login/send_code", to: "login#send_code"
   post "login/verify_code", to: "login#verify_code"
+  post "login/authenticate", to: "login#authenticate"
+  delete "logout", to: "login#logout", as: :logout
 
   # 健康报告相关接口
   get "health_reports", to: "health_reports#index"
