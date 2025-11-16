@@ -43,3 +43,5 @@
 # 忽略 Mac 系统文件
 .DS_Store
 .trae/
+
+rails.md
