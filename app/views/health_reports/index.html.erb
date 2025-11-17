@@ -58,8 +58,8 @@
       * { animation: none !important; transition: none !important; }
     }
 
-    * { 
-      box-sizing: border-box; 
+    * {
+      box-sizing: border-box;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
@@ -296,6 +296,17 @@
       transform: scale(1.1);
     }
 
+    .avatar-upload.uploading {
+      background: var(--accent-teal);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
     .avatar-upload svg {
       width: 16px;
       height: 16px;
@@ -377,6 +388,56 @@
       margin-top: 12px;
       font-style: italic;
     }
+
+        /* 内联编辑样式 */
+        .detail-value {
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border-radius: 4px;
+          padding: 2px 6px;
+          margin: -2px -6px;
+        }
+
+        .detail-value:hover {
+          background: rgba(102, 126, 234, 0.1);
+          color: var(--color-primary);
+        }
+
+        .detail-value.editing {
+          background: rgba(6, 182, 212, 0.1);
+          border: 2px solid var(--accent-teal);
+          padding: 4px 8px;
+          margin: -4px -8px;
+        }
+
+        .detail-value.editing input {
+          background: transparent;
+          border: none;
+          color: var(--color-text);
+          font-size: 15px;
+          font-weight: 600;
+          width: 100%;
+          outline: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .detail-value.editing input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .edit-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 8px;
+          justify-content: flex-end;
+        }
+
+        .edit-actions .btn {
+          padding: 6px 12px;
+          font-size: 12px;
+          min-height: auto;
+        }
 
     /* 编辑表单 - 移动端优化 */
     .edit-form {
@@ -752,6 +813,41 @@
       color: #f59e0b;
     }
 
+    .report-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .report-action-btn {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: #f9fafb;
+      color: #4b5563;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .report-action-btn:hover {
+      background: #eef2ff;
+      border-color: var(--accent-teal);
+      color: var(--accent-teal);
+    }
+
+    .report-group-protein .group-header {
+      border-left: 3px solid var(--accent-teal);
+    }
+
+    .report-group-gene .group-header {
+      border-left: 3px solid var(--accent-emerald);
+    }
+
     .tag-error {
       background: rgba(244, 63, 94, 0.1);
       color: var(--accent-rose);
@@ -967,6 +1063,28 @@
       }
     }
 
+    /* 预览模态框特定样式 */
+    #preview-modal .modal-content {
+      max-width: 900px;
+      width: 90%;
+    }
+
+    #preview-modal .modal-body {
+      padding: 16px;
+    }
+
+    .preview-frame-wrapper {
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      #preview-modal .modal-content {
+        max-width: 95%;
+        width: 95%;
+      }
+    }
+
+
     /* 浮动操作按钮 - 移动端优化 */
     .fab {
       position: fixed;
@@ -1062,7 +1180,7 @@
     <div class="profile-card" id="profile-card">
       <div class="profile-header">
         <div class="avatar-container">
-          <img class="profile-avatar" src="https://picsum.photos/seed/user-avatar/300/300.jpg" alt="用户头像" id="user-avatar">
+          <img class="profile-avatar" src="<%= @user&.avatar_path || '/uploads/avatars/user.jpg' %>" alt="用户头像" id="user-avatar">
           <div class="avatar-upload">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14M5 12h14"></path>
@@ -1078,12 +1196,16 @@
 
       <div class="profile-details" id="profile-details">
         <div class="detail-item">
+          <span class="detail-label">昵称</span>
+          <span class="detail-value" id="user-nickname" data-field="nickname" data-editable="false"><%= @user&.nickname || "未设置" %></span>
+        </div>
+        <div class="detail-item">
           <span class="detail-label">手机号</span>
-          <span class="detail-value" id="user-phone"><%= @user&.phone_number || "未设置" %></span>
+          <span class="detail-value" id="user-phone" data-field="phone_number" data-editable="false"><%= @user&.phone_number || "未设置" %></span>
         </div>
         <div class="detail-item">
           <span class="detail-label">邮箱</span>
-          <span class="detail-value" id="user-email"><%= @user&.email || "未设置" %></span>
+          <span class="detail-value" id="user-email" data-field="email" data-editable="false"><%= @user&.email || "未设置" %></span>
         </div>
         <div class="detail-item">
           <span class="detail-label">密码</span>
@@ -1145,87 +1267,80 @@
     </div>
 
     <div class="report-groups" id="report-groups">
-      <!-- 蛋白质检查报告 -->
-      <div class="report-group">
-        <div class="group-header">
-          <div class="group-icon">🧪</div>
-          <div class="group-title">
-            <h3>蛋白质检查</h3>
-            <div class="group-count">2 份报告</div>
-          </div>
-          <span class="group-status status-active">正常</span>
-        </div>
-        <div class="reports-list">
-          <a href="#" class="report-item">
-            <div class="report-card">
-              <div class="report-header">
-                <h4 class="report-title">CRP检查报告</h4>
-                <span class="report-date">2025-09-12</span>
-              </div>
-              <p class="report-summary">CRP轻度升高，建议复查。其他蛋白质指标均在正常范围内。</p>
-              <div class="report-tags">
-                <span class="report-tag tag-warning">轻度异常</span>
-                <span class="report-tag tag-normal">其他正常</span>
-              </div>
-            </div>
-          </a>
-          <a href="#" class="report-item">
-            <div class="report-card">
-              <div class="report-header">
-                <h4 class="report-title">总蛋白检查</h4>
-                <span class="report-date">2025-07-15</span>
-              </div>
-              <p class="report-summary">总蛋白指标正常，营养状况良好，无需特殊处理。</p>
-              <div class="report-tags">
-                <span class="report-tag tag-normal">指标正常</span>
-              </div>
-            </div>
-          </a>
-        </div>
-      </div>
+      <% if @health_reports.present? %>
+        <% grouped_reports = (@health_reports_by_type || @health_reports.group_by(&:report_type)) %>
 
-      <!-- 基因检查报告 -->
-      <div class="report-group">
-        <div class="group-header">
-          <div class="group-icon">🧬</div>
-          <div class="group-title">
-            <h3>基因检查</h3>
-            <div class="group-count">1 份报告</div>
-          </div>
-          <span class="group-status status-active">低风险</span>
-        </div>
-        <div class="reports-list">
-          <a href="#" class="report-item">
-            <div class="report-card">
-              <div class="report-header">
-                <h4 class="report-title">APOE基因检测</h4>
-                <span class="report-date">2025-08-03</span>
-              </div>
-              <p class="report-summary">APOE ε3/ε3 常规风险，与人群平均风险一致，建议保持健康生活方式。</p>
-              <div class="report-tags">
-                <span class="report-tag tag-normal">常规风险</span>
-              </div>
-            </div>
-          </a>
-        </div>
-      </div>
+        <% ['蛋白质检测报告', '基因检查报告'].each do |type| %>
+          <% reports = grouped_reports[type] %>
+          <% next if reports.blank? %>
+          <% group_icon = (type == '蛋白质检测报告' ? '🧪' : '🧬') %>
+          <% group_class = (type == '蛋白质检测报告' ? 'report-group-protein' : 'report-group-gene') %>
 
-      <!-- 其他检查报告（空状态示例） -->
-      <div class="report-group">
-        <div class="group-header">
-          <div class="group-icon">📊</div>
-          <div class="group-title">
-            <h3>血液检查</h3>
-            <div class="group-count">暂无报告</div>
+          <div class="report-group <%= group_class %>">
+            <div class="group-header">
+              <div class="group-icon"><%= group_icon %></div>
+              <div class="group-title">
+                <h3><%= type %></h3>
+                <div class="group-count"><%= "#{reports.size} 份报告" %></div>
+              </div>
+              <span class="group-status status-active">已生成</span>
+            </div>
+            <div class="reports-list">
+              <% reports.each do |report| %>
+                <div class="report-item">
+                  <div
+                    class="report-card"
+                    data-report-id="<%= report.id %>"
+                    data-report-type="<%= report.report_type %>"
+                    data-report-path="<%= report.report_path %>">
+                    <div class="report-header">
+                      <h4 class="report-title"><%= report.report_type %></h4>
+                      <span class="report-date"><%= report.created_at.strftime('%Y-%m-%d') %></span>
+                    </div>
+                    <p class="report-summary">
+                      <% if report.report_type == '蛋白质检测报告' %>
+                        蛋白质指标检查完成，结果正常。
+                      <% elsif report.report_type == '基因检查报告' %>
+                        基因检测分析完成，整体风险较低。
+                      <% else %>
+                        检查报告已生成。
+                      <% end %>
+                    </p>
+                    <div class="report-tags">
+                      <span class="report-tag tag-normal">最新报告</span>
+                    </div>
+                    <div class="report-actions">
+                      <button type="button" class="report-action-btn report-preview-btn">
+                        <span>预览</span>
+                      </button>
+                      <button type="button" class="report-action-btn report-download-btn">
+                        <span>下载</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
           </div>
-          <span class="group-status status-empty">暂无数据</span>
+        <% end %>
+      <% else %>
+        <div class="report-group">
+          <div class="group-header">
+            <div class="group-icon">�</div>
+            <div class="group-title">
+              <h3>暂无健康报告</h3>
+              <div class="group-count">0 份报告</div>
+            </div>
+            <span class="group-status status-empty">暂无数据</span>
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">�</div>
+            <h3 class="empty-title">您还没有健康报告</h3>
+            <p class="empty-description">上传第一份健康报告后，系统会在这里展示您的检查结果。</p>
+            <button type="button" class="btn btn-primary" onclick="showUploadModal()">上传第一份报告</button>
+          </div>
         </div>
-        <div class="empty-state">
-          <div class="empty-icon">📋</div>
-          <h3 class="empty-title">暂无血液检查报告</h3>
-          <p class="empty-description">您还没有血液检查报告，建议定期进行血液检查以了解身体状况。</p>
-        </div>
-      </div>
+      <% end %>
     </div>
 
     <!-- 加载更多 -->
@@ -1252,7 +1367,7 @@
   </div>
 
   <!-- 上传报告模态框 -->
-  <div class="modal" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title" style="display: none;">
+  <div class="modal" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="upload-title">上传健康报告</h2>
@@ -1325,6 +1440,36 @@
     </div>
   </div>
 
+  <!-- 报告预览模态框 -->
+  <div class="modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="preview-title">
+          <span id="preview-report-title">报告预览</span>
+        </h2>
+        <button type="button" class="modal-close" onclick="closePreviewModal()" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="preview-report-meta" style="margin: 0 0 12px; color: var(--color-text-light); font-size: 13px;"></p>
+        <div class="preview-frame-wrapper">
+          <iframe
+            id="preview-frame"
+            src=""
+            title="健康报告预览"
+            style="width: 100%; height: 480px; border: none; background: #f9fafb;">
+          </iframe>
+          <p style="margin-top: 8px; font-size: 12px; color: var(--color-text-light);">
+            如果无法在此处预览 PDF，可以使用每条报告上的“下载”按钮在本地打开。
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closePreviewModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- 浮动操作按钮 -->
   <button type="button" class="fab" id="refresh-btn" title="刷新数据">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1369,21 +1514,22 @@
         this.form = document.getElementById('edit-form');
         this.isEditing = false;
         this.lastTap = 0;
-        
+        this.currentEditingField = null;
+
         this.init();
       }
 
       init() {
-        // 双击事件处理
+        // 双击事件处理 - 改为内联编辑
         this.profileCard.addEventListener('click', (e) => {
           const currentTime = new Date().getTime();
           const tapLength = currentTime - this.lastTap;
-          
+
           if (tapLength < 500 && tapLength > 0) {
-            this.toggleEdit();
+            this.handleDoubleClick(e);
             e.preventDefault();
           }
-          
+
           this.lastTap = currentTime;
         });
 
@@ -1400,9 +1546,260 @@
 
         // 头像上传
         const avatarInput = document.getElementById('avatar-input');
+        const avatarUploadBtn = document.querySelector('.avatar-upload');
+
+        // 点击上传按钮触发文件选择
+        avatarUploadBtn.addEventListener('click', () => {
+          avatarInput.click();
+        });
+
+        // 文件选择变化处理
         avatarInput.addEventListener('change', (e) => {
           this.handleAvatarUpload(e.target.files[0]);
         });
+
+        // 内联编辑事件处理
+        this.setupInlineEditing();
+      }
+
+      setupInlineEditing() {
+        // 为可编辑字段添加点击事件
+        const editableFields = document.querySelectorAll('.detail-value[data-editable="false"]');
+        editableFields.forEach(field => {
+          field.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.startInlineEdit(field);
+          });
+        });
+      }
+
+      handleDoubleClick(e) {
+        // 如果点击的是可编辑字段，不触发全屏编辑模式
+        if (e.target.closest('.detail-value[data-editable="false"]')) {
+          return;
+        }
+        // 否则触发传统的表单编辑模式
+        this.toggleEdit();
+      }
+
+      startInlineEdit(fieldElement) {
+        if (this.currentEditingField) {
+          this.saveInlineEdit(this.currentEditingField);
+        }
+
+        const field = fieldElement.dataset.field;
+        const currentValue = fieldElement.textContent === '未设置' ? '' : fieldElement.textContent;
+
+        // 保存原始值
+        fieldElement.dataset.originalValue = currentValue;
+
+        // 创建内联编辑元素
+        const editElement = this.createInlineEditElement(field, currentValue);
+
+        // 替换原有内容
+        fieldElement.innerHTML = '';
+        fieldElement.appendChild(editElement);
+        fieldElement.classList.add('editing');
+        fieldElement.dataset.editable = 'true';
+
+        this.currentEditingField = fieldElement;
+
+        // 聚焦输入框
+        const input = editElement.querySelector('input');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }
+
+      createInlineEditElement(field, currentValue) {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '8px';
+        container.style.width = '100%';
+
+        let input;
+
+        switch (field) {
+          case 'nickname':
+            input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.placeholder = '请输入昵称';
+            input.maxLength = 50;
+            break;
+          case 'email':
+            input = document.createElement('input');
+            input.type = 'email';
+            input.value = currentValue;
+            input.placeholder = '请输入邮箱';
+            break;
+          case 'phone_number':
+            input = document.createElement('input');
+            input.type = 'tel';
+            input.value = currentValue;
+            input.placeholder = '请输入手机号';
+            input.pattern = '^1[3-9]\\d{9}$';
+            break;
+          default:
+            input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+        }
+
+        // 输入框样式
+        input.style.background = 'transparent';
+        input.style.border = 'none';
+        input.style.color = 'var(--color-text)';
+        input.style.fontSize = '15px';
+        input.style.fontWeight = '600';
+        input.style.outline = 'none';
+        input.style.padding = '0';
+        input.style.margin = '0';
+        input.style.width = '100%';
+
+        // 添加输入事件处理
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.saveInlineEdit(this.currentEditingField);
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            this.cancelInlineEdit(this.currentEditingField);
+          }
+        });
+
+        // 添加失焦事件处理
+        input.addEventListener('blur', () => {
+          setTimeout(() => {
+            if (this.currentEditingField === fieldElement) {
+              this.saveInlineEdit(this.currentEditingField);
+            }
+          }, 200);
+        });
+
+        container.appendChild(input);
+
+        // 添加操作按钮
+        const actions = document.createElement('div');
+        actions.className = 'edit-actions';
+        actions.innerHTML = `
+          <button type="button" class="btn btn-primary btn-sm" onclick="profileEditor.saveInlineEdit(profileEditor.currentEditingField)">保存</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="profileEditor.cancelInlineEdit(profileEditor.currentEditingField)">取消</button>
+        `;
+        container.appendChild(actions);
+
+        return container;
+      }
+
+      saveInlineEdit(fieldElement) {
+        if (!fieldElement || !this.currentEditingField) return;
+
+        const field = fieldElement.dataset.field;
+        const input = fieldElement.querySelector('input');
+        const newValue = input.value.trim();
+
+        // 验证输入
+        if (!this.validateField(field, newValue)) {
+          return;
+        }
+
+        // 如果值没有改变，直接退出编辑模式
+        const originalValue = fieldElement.textContent === '未设置' ? '' : fieldElement.textContent;
+        if (newValue === originalValue) {
+          this.exitInlineEdit(fieldElement, originalValue);
+          return;
+        }
+
+        // 保存到服务器
+        this.saveFieldToServer(field, newValue, fieldElement);
+      }
+
+      cancelInlineEdit(fieldElement) {
+        if (!fieldElement) return;
+
+        const originalValue = fieldElement.dataset.originalValue || '';
+        this.exitInlineEdit(fieldElement, originalValue);
+      }
+
+      exitInlineEdit(fieldElement, value) {
+        fieldElement.innerHTML = value || '未设置';
+        fieldElement.classList.remove('editing');
+        fieldElement.dataset.editable = 'false';
+        delete fieldElement.dataset.originalValue;
+
+        if (this.currentEditingField === fieldElement) {
+          this.currentEditingField = null;
+        }
+      }
+
+      validateField(field, value) {
+        switch (field) {
+          case 'nickname':
+            if (!value) {
+              showToast('昵称不能为空', 'error');
+              return false;
+            }
+            if (value.length > 50) {
+              showToast('昵称长度不能超过50个字符', 'error');
+              return false;
+            }
+            break;
+          case 'email':
+            if (!this.validateEmail(value)) {
+              showToast('请输入正确的邮箱格式', 'error');
+              return false;
+            }
+            break;
+          case 'phone_number':
+            if (!this.validatePhone(value)) {
+              showToast('请输入正确的手机号格式', 'error');
+              return false;
+            }
+            break;
+        }
+        return true;
+      }
+
+      async saveFieldToServer(field, value, fieldElement) {
+        try {
+          const data = {};
+          data[field] = value;
+
+          const response = await fetch('/health_reports/update_profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify(data)
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            // 更新显示
+            this.exitInlineEdit(fieldElement, value);
+            showToast('✨ 已保存', 'success');
+
+            // 更新其他相关字段
+            if (field === 'nickname') {
+              document.getElementById('user-name').textContent = value;
+            }
+          } else {
+            showToast(result.error || '保存失败，请重试', 'error');
+            // 恢复到原始值
+            const originalValue = fieldElement.dataset.originalValue || '';
+            this.exitInlineEdit(fieldElement, originalValue);
+          }
+        } catch (error) {
+          console.error('保存失败:', error);
+          showToast('网络错误，请稍后重试', 'error');
+          // 恢复到原始值
+          const originalValue = fieldElement.dataset.originalValue || '';
+          this.exitInlineEdit(fieldElement, originalValue);
+        }
       }
 
       toggleEdit() {
@@ -1416,21 +1813,21 @@
       startEdit() {
         this.isEditing = true;
         this.editForm.classList.add('active');
-        
+
         // 填充当前数据
         const name = document.getElementById('user-name').textContent;
         const phone = document.getElementById('user-phone').textContent;
         const email = document.getElementById('user-email').textContent;
-        
+
         document.getElementById('edit-name').value = name === '未设置' ? '' : name;
         document.getElementById('edit-phone').value = phone === '未设置' ? '' : phone;
         document.getElementById('edit-email').value = email === '未设置' ? '' : email;
-        
+
         // 聚焦第一个输入框
         setTimeout(() => {
           document.getElementById('edit-name').focus();
         }, 100);
-        
+
         showToast('已进入编辑模式', 'info');
       }
 
@@ -1498,16 +1895,20 @@
 
       updateDisplay(name, phone, email) {
         document.getElementById('user-name').textContent = name;
+        document.getElementById('user-nickname').textContent = name;
         document.getElementById('user-phone').textContent = phone;
         document.getElementById('user-email').textContent = email;
       }
 
-      validatePhone(phone) {
-        return /^1[3-9]\d{9}$/.test(phone);
+      // 内联编辑的验证方法
+      validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
       }
 
-      validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      validatePhone(phone) {
+        const phoneRegex = /^1[3-9]\d{9}$/;
+        return phoneRegex.test(phone);
       }
 
       async handleAvatarUpload(file) {
@@ -1516,17 +1917,30 @@
           return;
         }
 
-        if (file.size > 2 * 1024 * 1024) {
-          showToast('头像文件不能超过 2MB', 'error');
+        // 验证文件大小（5MB）
+        if (file.size > 5 * 1024 * 1024) {
+          const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+          showToast(`头像文件不能超过 5MB（当前文件大小：${fileSizeMB} MB）`, 'error');
+          return;
+        }
+
+        // 验证文件格式
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          showToast('只支持 JPEG、PNG、GIF、WebP 格式的图片', 'error');
           return;
         }
 
         const formData = new FormData();
         formData.append('avatar', file);
 
+        // 显示上传状态
+        const uploadBtn = document.querySelector('.avatar-upload');
+        uploadBtn.classList.add('uploading');
+
         try {
           showToast('正在上传头像...', 'info');
-          
+
           const response = await fetch('/health_reports/upload_avatar', {
             method: 'POST',
             headers: {
@@ -1538,7 +1952,9 @@
           const result = await response.json();
 
           if (result.success) {
-            document.getElementById('user-avatar').src = result.avatar_url;
+            // 更新头像显示，添加时间戳防止缓存
+            const avatarImg = document.getElementById('user-avatar');
+            avatarImg.src = result.avatar_url + '?t=' + Date.now();
             showToast('✨ 头像已更新', 'success');
           } else {
             showToast(result.error || '头像上传失败', 'error');
@@ -1546,6 +1962,15 @@
         } catch (error) {
           console.error('头像上传失败:', error);
           showToast('网络错误，请稍后重试', 'error');
+        } finally {
+          // 移除上传状态
+          uploadBtn.classList.remove('uploading');
+
+          // 清空文件选择，允许重新上传相同文件
+          const avatarInput = document.getElementById('avatar-input');
+          if (avatarInput) {
+            avatarInput.value = '';
+          }
         }
       }
     }
@@ -1557,7 +1982,7 @@
         this.modal = document.getElementById('logout-modal');
         this.confirmBtn = document.getElementById('confirm-logout');
         this.cancelBtn = document.getElementById('cancel-logout');
-        
+
         this.init();
       }
 
@@ -1601,7 +2026,7 @@
       confirmLogout() {
         this.hideModal();
         showToast('正在退出登录...', 'info');
-        
+
         // 模拟退出登录
         setTimeout(() => {
           window.location.href = '/login';
@@ -1617,7 +2042,7 @@
         this.refreshBtn = document.getElementById('refresh-btn');
         this.isLoading = false;
         this.currentPage = 1;
-        
+
         this.init();
       }
 
@@ -1655,34 +2080,104 @@
       }
 
       setupReportClicks() {
+        if (!this.reportGroups) return;
+
         this.reportGroups.addEventListener('click', (e) => {
           const reportCard = e.target.closest('.report-card');
-          if (reportCard) {
-            e.preventDefault();
-            this.openReport(reportCard);
+          if (!reportCard) return;
+
+          const previewBtn = e.target.closest('.report-preview-btn');
+          const downloadBtn = e.target.closest('.report-download-btn');
+
+          e.preventDefault();
+
+          if (downloadBtn) {
+            this.downloadReport(reportCard);
+          } else {
+            // 默认行为：预览报告
+            this.previewReport(reportCard);
           }
         });
       }
 
+      previewReport(reportCard) {
+        const titleEl = reportCard.querySelector('.report-title');
+        const dateEl = reportCard.querySelector('.report-date');
+        const reportType = reportCard.dataset.reportType || (titleEl ? titleEl.textContent : '健康检查报告');
+        const reportPath = reportCard.dataset.reportPath;
+
+        if (!reportPath) {
+          showToast('报告文件路径不存在，无法预览', 'error');
+          return;
+        }
+
+        const modal = document.getElementById('preview-modal');
+        const frame = document.getElementById('preview-frame');
+        const previewTitle = document.getElementById('preview-report-title');
+        const previewMeta = document.getElementById('preview-report-meta');
+
+        if (!modal || !frame) {
+          console.error('预览模态框未初始化');
+          showToast('预览组件未就绪，请刷新页面后重试', 'error');
+          return;
+        }
+
+        const title = titleEl ? titleEl.textContent : '健康检查报告';
+        const dateText = dateEl ? dateEl.textContent : '';
+
+        if (previewTitle) {
+          previewTitle.textContent = title;
+        }
+        if (previewMeta) {
+          previewMeta.textContent = dateText ? (reportType + ' · ' + dateText) : reportType;
+        }
+
+        frame.src = reportPath;
+
+        // 显示模态框
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      downloadReport(reportCard) {
+        const dateEl = reportCard.querySelector('.report-date');
+        const reportType = reportCard.dataset.reportType || '健康检查报告';
+        const reportPath = reportCard.dataset.reportPath;
+
+        if (!reportPath) {
+          showToast('报告文件路径不存在，无法下载', 'error');
+          return;
+        }
+
+        const rawDate = dateEl ? dateEl.textContent : '';
+        const normalizedDate = rawDate.replace(/\./g, '-').replace(/\//g, '-').substring(0, 10);
+        const filename = reportType + '_' + (normalizedDate || '报告') + '.pdf';
+
+        try {
+          const link = document.createElement('a');
+          link.href = reportPath;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('开始下载报告...', 'info');
+        } catch (error) {
+          console.error('下载报告失败:', error);
+          showToast('下载失败，请稍后重试', 'error');
+        }
+      }
+
+      // 保留 openReport 方法以兼容旧代码，内部委托给 previewReport
       openReport(reportCard) {
-        const title = reportCard.querySelector('.report-title').textContent;
-        const date = reportCard.querySelector('.report-date').textContent;
-        
-        showToast(`正在打开 ${title} (${date})...`, 'info');
-        
-        // 模拟打开报告详情
-        setTimeout(() => {
-          // 这里可以跳转到报告详情页或打开模态框
-          console.log(`打开报告: ${title}`);
-        }, 500);
+        this.previewReport(reportCard);
       }
 
       refreshReports() {
         if (this.isLoading) return;
-        
+
         this.isLoading = true;
         showToast('正在刷新报告列表...', 'info');
-        
+
         // 模拟刷新
         setTimeout(() => {
           this.isLoading = false;
@@ -1692,10 +2187,10 @@
 
       loadMoreReports() {
         if (this.isLoading || this.currentPage >= 3) return;
-        
+
         this.isLoading = true;
         this.loadingMore.style.display = 'block';
-        
+
         // 模拟加载更多
         setTimeout(() => {
           this.addMoreReports();
@@ -1719,7 +2214,7 @@
         this.isRefreshing = false;
         this.startY = 0;
         this.currentY = 0;
-        
+
         this.init();
       }
 
@@ -1752,13 +2247,13 @@
 
         this.reportsSection.addEventListener('touchmove', (e) => {
           if (!isPulling || this.isRefreshing) return;
-          
+
           touchEndY = e.touches[0].clientY;
           const pullDistance = touchEndY - touchStartY;
-          
+
           if (pullDistance > 0 && this.reportsSection.scrollTop === 0) {
             e.preventDefault();
-            
+
             if (pullDistance > 60) {
               this.pullToRefresh.classList.add('refreshing');
               this.pullToRefresh.querySelector('span').textContent = '释放刷新';
@@ -1766,17 +2261,17 @@
               this.pullToRefresh.classList.remove('refreshing');
               this.pullToRefresh.querySelector('span').textContent = '下拉刷新';
             }
-            
+
             this.pullToRefresh.style.transform = `translateY(${Math.min(pullDistance, 80)}px)`;
           }
         }, { passive: false });
 
         this.reportsSection.addEventListener('touchend', (e) => {
           if (!isPulling || this.isRefreshing) return;
-          
+
           isPulling = false;
           const pullDistance = touchEndY - touchStartY;
-          
+
           if (pullDistance > 60) {
             this.refresh();
           } else {
@@ -1788,7 +2283,7 @@
       refresh() {
         this.isRefreshing = true;
         this.pullToRefresh.querySelector('span').textContent = '刷新中...';
-        
+
         // 模拟刷新
         setTimeout(() => {
           showToast('✨ 数据已刷新', 'success');
@@ -1819,15 +2314,35 @@
       uploadProgress.style.display = 'none';
 
       // 显示模态框
-      modal.style.display = 'flex';
+      modal.classList.add('active');
       document.body.style.overflow = 'hidden';
     }
 
     function closeUploadModal() {
       const modal = document.getElementById('upload-modal');
-      modal.style.display = 'none';
+      // 移除 active 类触发淡出动画
+      modal.classList.remove('active');
       document.body.style.overflow = '';
     }
+
+    function closePreviewModal() {
+      const modal = document.getElementById('preview-modal');
+      const frame = document.getElementById('preview-frame');
+
+      if (modal) {
+        // 移除 active 类触发淡出动画
+        modal.classList.remove('active');
+      }
+      if (frame) {
+        // 延迟清空 iframe src，等待动画完成
+        setTimeout(() => {
+          frame.src = '';
+        }, 240);
+      }
+
+      document.body.style.overflow = '';
+    }
+
 
     // 文件选择处理
     document.addEventListener('DOMContentLoaded', () => {
@@ -1964,6 +2479,25 @@
       new LogoutManager();
       new ReportManager();
       new PullToRefresh();
+
+      // 报告预览模态框交互
+      const previewModal = document.getElementById('preview-modal');
+      if (previewModal) {
+        previewModal.addEventListener('click', (e) => {
+          if (e.target === previewModal) {
+            closePreviewModal();
+          }
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('preview-modal');
+          if (modal && modal.style.display === 'flex') {
+            closePreviewModal();
+          }
+        }
+      });
 
       // 显示欢迎消息
       setTimeout(() => {

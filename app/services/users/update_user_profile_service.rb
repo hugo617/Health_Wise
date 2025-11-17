@@ -26,13 +26,15 @@ class Users::UpdateUserProfileService
   private
 
   def validate_params
-    # 验证昵称
-    if @params[:nickname].blank?
-      return { success: false, error: '昵称不能为空' }
-    end
+    # 验证昵称（如果提供了昵称）
+    if @params[:nickname].present?
+      if @params[:nickname].blank?
+        return { success: false, error: '昵称不能为空' }
+      end
 
-    if @params[:nickname].length > 50
-      return { success: false, error: '昵称长度不能超过50个字符' }
+      if @params[:nickname].length > 50
+        return { success: false, error: '昵称长度不能超过50个字符' }
+      end
     end
 
     # 验证手机号

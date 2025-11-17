@@ -7,7 +7,8 @@ class HealthReportsController < ApplicationController
   def index
     @user = current_user
     @health_reports = @user.health_reports.order(created_at: :desc)
-    
+    @health_reports_by_type = @health_reports.group_by(&:report_type)
+
     respond_to do |format|
       format.html
       format.json { 
@@ -92,6 +93,8 @@ class HealthReportsController < ApplicationController
     result = Users::UpdateUserProfileService.call(current_user, profile_params)
     
     if result[:success]
+      # 更新成功后，重新获取用户数据
+      @user = current_user
       render json: { 
         success: true, 
         message: '个人信息更新成功',
@@ -164,13 +167,14 @@ class HealthReportsController < ApplicationController
   end
 
   def user_data
+    user = @user || current_user
     {
-      id: @user.id,
-      nickname: @user.nickname,
-      phone_number: @user.phone_number,
-      email: @user.email,
-      membership_type: @user.membership_type,
-      avatar_url: @user.avatar_path || 'https://picsum.photos/seed/user-avatar/300/300.jpg'
+      id: user.id,
+      nickname: user.nickname,
+      phone_number: user.phone_number,
+      email: user.email,
+      membership_type: user.membership_type,
+      avatar_url: user.avatar_path || 'https://picsum.photos/seed/user-avatar/300/300.jpg'
     }
   end
 

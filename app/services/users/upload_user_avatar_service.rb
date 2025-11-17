@@ -33,9 +33,9 @@ class Users::UploadUserAvatarService
       return { success: false, error: '请选择图片文件' }
     end
 
-    # 验证文件大小 (最大2MB)
-    if @avatar_file.size > 2.megabytes
-      return { success: false, error: '头像文件不能超过2MB' }
+    # 验证文件大小 (最大5MB)
+    if @avatar_file.size > 5.megabytes
+      return { success: false, error: '头像文件不能超过5MB' }
     end
 
     # 验证文件格式
@@ -50,20 +50,28 @@ class Users::UploadUserAvatarService
   end
 
   def process_avatar_upload
-    # 生成唯一文件名
-    file_name = "avatar_#{@user.id}_#{Time.current.to_i}#{File.extname(@avatar_file.original_filename)}"
+    # 生成基于手机号的文件名，确保唯一性
+    phone_number = @user.phone_number || "user_#{@user.id}"
+    file_extension = File.extname(@avatar_file.original_filename).downcase
+    file_name = "#{phone_number}#{file_extension}"
     
-    # 模拟文件上传路径 - 实际项目中应该使用真实的文件存储服务
-    avatar_path = "uploads/avatars/#{file_name}"
+    # 本地存储路径
+    avatar_dir = Rails.root.join('public', 'uploads', 'avatars')
+    avatar_path = avatar_dir.join(file_name)
     
-    # 在实际项目中，这里应该：
-    # 1. 将文件上传到云存储（如AWS S3、阿里云OSS等）
-    # 2. 生成不同尺寸的缩略图
-    # 3. 更新用户的avatar_path字段
+    # 确保目录存在
+    FileUtils.mkdir_p(avatar_dir) unless File.exist?(avatar_dir)
     
-    # 模拟上传成功，返回头像URL
-    # 这里使用随机图片服务作为示例
-    "https://picsum.photos/seed/avatar_#{@user.id}_#{Time.current.to_i}/300/300.jpg"
+    # 保存文件到本地存储
+    File.open(avatar_path, 'wb') do |file|
+      file.write(@avatar_file.read)
+    end
+    
+    # 更新用户的avatar_path字段
+    save_avatar_path("/uploads/avatars/#{file_name}")
+    
+    # 返回头像URL
+    "/uploads/avatars/#{file_name}"
   end
 
   def generate_thumbnail(image_path, size)

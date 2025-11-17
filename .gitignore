@@ -63,3 +63,12 @@ HEALTH_REPORT_UPLOAD_DELIVERY.md
 UPLOAD_UI_IMPLEMENTATION.md
 public/uploads/
 test_upload_health_report.rb
+AVATAR_UPLOAD_IMPLEMENTATION_REPORT.md
+HEALTH_REPORT_DATA_BINDING_DELIVERY.md
+PREVIEW_DOWNLOAD_FIX.md
+PROFILE_UPDATE_FIX_REPORT.md
+public/test_profile_update.html
+test_avatar_api.rb
+test_avatar_upload.html
+test_inline_edit.rb
+test_profile_update.rb
