@@ -59,3 +59,7 @@ test_frontend_integration.rb
 test_admin_health_reports.rb
 test_health_report_management.rb
 HEALTH_REPORTS_REFACTORING_TEST.md
+HEALTH_REPORT_UPLOAD_DELIVERY.md
+UPLOAD_UI_IMPLEMENTATION.md
+public/uploads/
+test_upload_health_report.rb

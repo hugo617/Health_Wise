@@ -20,10 +20,15 @@ Rails.application.routes.draw do
   delete "health_reports/:id", to: "health_reports#destroy"
   post "health_reports/update_profile", to: "health_reports#update_profile"
   post "health_reports/upload_avatar", to: "health_reports#upload_avatar"
+  post "health_reports/upload", to: "health_reports#upload"
 
   # 管理员健康报告管理路由
   namespace :admin do
-    resources :health_reports, only: [:index, :show]
+    resources :health_reports, only: [:index, :show, :create, :update, :destroy] do
+      collection do
+        post :upload
+      end
+    end
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

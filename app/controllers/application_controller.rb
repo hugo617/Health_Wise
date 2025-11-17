@@ -2,6 +2,9 @@ class ApplicationController < ActionController::Base
   # 全局登录拦截
   before_action :require_login
 
+  # 对于 multipart/form-data 请求（文件上传），跳过 CSRF 验证
+  skip_before_action :verify_authenticity_token, if: :multipart_request?
+
   helper_method :show_sidenav?, :current_user, :logged_in?, :admin?
 
   def show_sidenav?
@@ -14,6 +17,11 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
 
   private
+
+  # 检查是否是 multipart/form-data 请求（文件上传）
+  def multipart_request?
+    request.content_type&.start_with?('multipart/form-data')
+  end
 
   # 获取当前登录用户
   def current_user

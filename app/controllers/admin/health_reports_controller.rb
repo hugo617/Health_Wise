@@ -114,16 +114,39 @@ class Admin::HealthReportsController < ApplicationController
   
   def destroy
     result = HealthReports::DeleteHealthReportService.call(params[:id])
-    
+
     if result[:success]
-      render json: { 
-        success: true, 
+      render json: {
+        success: true,
         message: '健康报告删除成功'
       }
     else
-      render json: { 
-        success: false, 
-        error: result[:error] 
+      render json: {
+        success: false,
+        error: result[:error]
+      }, status: :unprocessable_entity
+    end
+  end
+
+  def upload
+    # 管理员可以为任意用户上传报告
+    result = HealthReports::UploadHealthReportService.call(
+      user_id: params[:user_id],
+      report_type: params[:report_type],
+      file: params[:file],
+      current_user_id: current_user.id
+    )
+
+    if result[:success]
+      render json: {
+        success: true,
+        message: result[:data][:message],
+        report: report_data(result[:data][:health_report])
+      }
+    else
+      render json: {
+        success: false,
+        error: result[:error]
       }, status: :unprocessable_entity
     end
   end

@@ -514,6 +514,13 @@
 
     .reports-header {
       margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reports-header-text {
+      flex: 1;
     }
 
     .reports-title {
@@ -528,6 +535,36 @@
       font-size: 14px;
       color: var(--color-text-light);
       margin: 0;
+    }
+
+    .upload-report-btn {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .upload-report-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .upload-report-btn:active {
+      transform: translateY(0);
+    }
+
+    .upload-report-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .report-groups {
@@ -1093,8 +1130,18 @@
   <!-- 报告列表区域 -->
   <main class="reports-section">
     <div class="reports-header">
-      <h2 class="reports-title">健康报告</h2>
-      <p class="reports-subtitle">查看您的各项健康检查结果</p>
+      <div class="reports-header-text">
+        <h2 class="reports-title">健康报告</h2>
+        <p class="reports-subtitle">查看您的各项健康检查结果</p>
+      </div>
+      <button type="button" class="upload-report-btn" onclick="showUploadModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        上传报告
+      </button>
     </div>
 
     <div class="report-groups" id="report-groups">
@@ -1200,6 +1247,80 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="cancel-logout">取消</button>
         <button type="button" class="btn btn-primary" id="confirm-logout">确认退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 上传报告模态框 -->
+  <div class="modal" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="upload-title">上传健康报告</h2>
+        <button type="button" class="modal-close" onclick="closeUploadModal()" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="upload-form">
+          <!-- 报告类型选择 -->
+          <div class="form-group">
+            <label for="upload-report-type">报告类型 <span style="color: #f43f5e;">*</span></label>
+            <select id="upload-report-type" class="form-control" required>
+              <option value="">请选择报告类型...</option>
+              <option value="基因检查报告">🧬 基因检查报告</option>
+              <option value="蛋白质检测报告">🧪 蛋白质检测报告</option>
+            </select>
+          </div>
+
+          <!-- 文件选择 -->
+          <div class="form-group">
+            <label for="upload-file">选择文件 <span style="color: #f43f5e;">*</span></label>
+            <input type="file" id="upload-file" class="form-control" accept=".pdf,application/pdf" required>
+            <small style="color: var(--color-text-light); display: block; margin-top: 8px;">
+              只支持 PDF 格式，文件大小不超过 10MB
+            </small>
+            <div id="file-info" style="display: none; margin-top: 12px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border-left: 3px solid var(--color-primary);">
+              <div style="display: flex; align-items: center; gap: 8px; color: var(--color-primary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <div>
+                  <strong id="file-name"></strong>
+                  <br>
+                  <small id="file-size"></small>
+                </div>
+              </div>
+            </div>
+            <div id="file-error" style="display: none; margin-top: 12px; padding: 12px; background: rgba(244, 63, 94, 0.1); border-radius: 8px; border-left: 3px solid #f43f5e;">
+              <div style="display: flex; align-items: center; gap: 8px; color: #f43f5e;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span id="file-error-message"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 上传进度 -->
+          <div id="upload-progress" style="display: none; margin-top: 16px;">
+            <div style="background: rgba(102, 126, 234, 0.1); border-radius: 8px; padding: 16px; text-align: center;">
+              <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+              <p style="margin: 0; color: var(--color-primary); font-weight: 600;">正在上传报告...</p>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">取消</button>
+        <button type="button" class="btn btn-primary" id="upload-submit-btn" onclick="submitUploadReport()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          开始上传
+        </button>
       </div>
     </div>
   </div>
@@ -1683,13 +1804,167 @@
       }
     }
 
+    // 上传报告功能
+    function showUploadModal() {
+      const modal = document.getElementById('upload-modal');
+      const form = document.getElementById('upload-form');
+      const fileInfo = document.getElementById('file-info');
+      const fileError = document.getElementById('file-error');
+      const uploadProgress = document.getElementById('upload-progress');
+
+      // 重置表单
+      form.reset();
+      fileInfo.style.display = 'none';
+      fileError.style.display = 'none';
+      uploadProgress.style.display = 'none';
+
+      // 显示模态框
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeUploadModal() {
+      const modal = document.getElementById('upload-modal');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    // 文件选择处理
+    document.addEventListener('DOMContentLoaded', () => {
+      const fileInput = document.getElementById('upload-file');
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          const fileInfo = document.getElementById('file-info');
+          const fileError = document.getElementById('file-error');
+          const fileName = document.getElementById('file-name');
+          const fileSize = document.getElementById('file-size');
+          const fileErrorMessage = document.getElementById('file-error-message');
+
+          // 隐藏之前的提示
+          fileInfo.style.display = 'none';
+          fileError.style.display = 'none';
+
+          if (!file) return;
+
+          // 验证文件类型
+          if (file.type !== 'application/pdf') {
+            fileError.style.display = 'block';
+            fileErrorMessage.textContent = '只支持 PDF 格式的文件';
+            fileInput.value = '';
+            return;
+          }
+
+          // 验证文件大小（10MB）
+          const maxSize = 10 * 1024 * 1024;
+          if (file.size > maxSize) {
+            fileError.style.display = 'block';
+            fileErrorMessage.textContent = `文件大小超过限制（最大 10MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            fileInput.value = '';
+            return;
+          }
+
+          // 显示文件信息
+          fileName.textContent = file.name;
+          fileSize.textContent = formatFileSize(file.size);
+          fileInfo.style.display = 'block';
+        });
+      }
+    });
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // 提交上传
+    async function submitUploadReport() {
+      const reportType = document.getElementById('upload-report-type').value;
+      const fileInput = document.getElementById('upload-file');
+      const file = fileInput.files[0];
+      const submitBtn = document.getElementById('upload-submit-btn');
+      const uploadProgress = document.getElementById('upload-progress');
+
+      // 验证表单
+      if (!reportType) {
+        showToast('请选择报告类型', 'error');
+        return;
+      }
+
+      if (!file) {
+        showToast('请选择要上传的文件', 'error');
+        return;
+      }
+
+      // 再次验证文件
+      if (file.type !== 'application/pdf') {
+        showToast('只支持 PDF 格式的文件', 'error');
+        return;
+      }
+
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast('文件大小超过限制（最大 10MB）', 'error');
+        return;
+      }
+
+      // 构建 FormData
+      const formData = new FormData();
+      formData.append('report_type', reportType);
+      formData.append('file', file);
+
+      // 显示上传进度
+      uploadProgress.style.display = 'block';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; margin-right: 6px;"></div>上传中...';
+
+      try {
+        const response = await fetch('/health_reports/upload', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>开始上传';
+
+        if (data.success) {
+          showToast(data.message || '报告上传成功', 'success');
+          closeUploadModal();
+
+          // 刷新页面以显示新上传的报告
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          showToast(data.error || '上传失败', 'error');
+        }
+      } catch (error) {
+        console.error('上传失败:', error);
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>开始上传';
+        showToast('上传失败，请稍后重试', 'error');
+      }
+    }
+
     // 初始化应用
     document.addEventListener('DOMContentLoaded', () => {
       new ProfileEditor();
       new LogoutManager();
       new ReportManager();
       new PullToRefresh();
-      
+
       // 显示欢迎消息
       setTimeout(() => {
         showToast('🎉 欢迎回来！', 'success');

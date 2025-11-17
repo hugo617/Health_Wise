@@ -107,17 +107,40 @@ class HealthReportsController < ApplicationController
 
   def upload_avatar
     result = Users::UploadUserAvatarService.call(current_user, params[:avatar])
-    
+
     if result[:success]
-      render json: { 
-        success: true, 
+      render json: {
+        success: true,
         message: '头像上传成功',
         avatar_url: result[:avatar_url]
       }
     else
-      render json: { 
-        success: false, 
-        error: result[:error] 
+      render json: {
+        success: false,
+        error: result[:error]
+      }, status: :unprocessable_entity
+    end
+  end
+
+  def upload
+    # 普通用户只能为自己上传报告
+    result = HealthReports::UploadHealthReportService.call(
+      user_id: current_user.id,
+      report_type: params[:report_type],
+      file: params[:file],
+      current_user_id: current_user.id
+    )
+
+    if result[:success]
+      render json: {
+        success: true,
+        message: result[:data][:message],
+        report: report_data(result[:data][:health_report])
+      }
+    else
+      render json: {
+        success: false,
+        error: result[:error]
       }, status: :unprocessable_entity
     end
   end

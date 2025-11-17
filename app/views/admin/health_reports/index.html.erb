@@ -398,6 +398,93 @@
         </div>
     </div>
 
+    <!-- 上传报告模态框 -->
+    <div class="modal fade" id="uploadReportModal" tabindex="-1" aria-labelledby="uploadReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadReportModalLabel">
+                        <i class="fas fa-upload me-2"></i>上传健康报告
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadReportForm">
+                        <!-- 用户选择（管理员功能） -->
+                        <div class="mb-3">
+                            <label for="uploadUserId" class="form-label">
+                                <i class="fas fa-user me-2"></i>选择用户 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="uploadUserId" required>
+                                <option value="">请选择用户...</option>
+                                <!-- 动态加载用户选项 -->
+                            </select>
+                            <div class="form-text">选择要为其上传报告的用户</div>
+                        </div>
+
+                        <!-- 报告类型选择 -->
+                        <div class="mb-3">
+                            <label for="uploadReportType" class="form-label">
+                                <i class="fas fa-file-medical me-2"></i>报告类型 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="uploadReportType" required>
+                                <option value="">请选择报告类型...</option>
+                                <option value="基因检查报告">🧬 基因检查报告</option>
+                                <option value="蛋白质检测报告">🧪 蛋白质检测报告</option>
+                            </select>
+                            <div class="form-text">选择要上传的报告类型</div>
+                        </div>
+
+                        <!-- 文件选择 -->
+                        <div class="mb-3">
+                            <label for="uploadReportFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>选择文件 <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control" id="uploadReportFile" accept=".pdf,application/pdf" required>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                只支持 PDF 格式，文件大小不超过 10MB
+                            </div>
+                            <div id="fileInfo" class="mt-2" style="display: none;">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-file-pdf me-2"></i>
+                                    <strong>已选择：</strong><span id="fileName"></span>
+                                    <br>
+                                    <small><strong>大小：</strong><span id="fileSize"></span></small>
+                                </div>
+                            </div>
+                            <div id="fileError" class="mt-2" style="display: none;">
+                                <div class="alert alert-danger mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="fileErrorMessage"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 上传进度 -->
+                        <div id="uploadProgress" class="mb-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar"
+                                     style="width: 100%">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>上传中...
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>取消
+                    </button>
+                    <button type="button" class="btn btn-primary" id="uploadSubmitBtn" onclick="submitUpload()">
+                        <i class="fas fa-upload me-2"></i>开始上传
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -753,8 +840,188 @@
 
         // 显示创建模态框
         function showCreateModal() {
-            // 这里可以实现创建报告的模态框
-            showNotification('提示', '创建报告功能开发中...', 'info');
+            // 重置表单
+            document.getElementById('uploadReportForm').reset();
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('fileError').style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'none';
+
+            // 加载用户选项到上传表单
+            loadUploadUserOptions();
+
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('uploadReportModal'));
+            modal.show();
+        }
+
+        // 加载上传表单的用户选项
+        function loadUploadUserOptions() {
+            const uploadUserSelect = document.getElementById('uploadUserId');
+            if (!uploadUserSelect) return;
+
+            // 清空现有选项（保留第一个"请选择"选项）
+            uploadUserSelect.innerHTML = '<option value="">请选择用户...</option>';
+
+            fetch('/users.json?per_page=100', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.nickname} (${user.phone_number})`;
+                        uploadUserSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('加载用户选项失败:', error);
+                showNotification('错误', '加载用户列表失败', 'error');
+            });
+        }
+
+        // 文件选择变化处理
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('uploadReportFile');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const fileInfo = document.getElementById('fileInfo');
+                    const fileError = document.getElementById('fileError');
+                    const fileName = document.getElementById('fileName');
+                    const fileSize = document.getElementById('fileSize');
+                    const fileErrorMessage = document.getElementById('fileErrorMessage');
+
+                    // 隐藏之前的提示
+                    fileInfo.style.display = 'none';
+                    fileError.style.display = 'none';
+
+                    if (!file) return;
+
+                    // 验证文件类型
+                    if (file.type !== 'application/pdf') {
+                        fileError.style.display = 'block';
+                        fileErrorMessage.textContent = '只支持 PDF 格式的文件';
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    // 验证文件大小（10MB = 10 * 1024 * 1024 bytes）
+                    const maxSize = 10 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        fileError.style.display = 'block';
+                        fileErrorMessage.textContent = `文件大小超过限制（最大 10MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                        fileInput.value = '';
+                        return;
+                    }
+
+                    // 显示文件信息
+                    fileName.textContent = file.name;
+                    fileSize.textContent = formatFileSize(file.size);
+                    fileInfo.style.display = 'block';
+                });
+            }
+        });
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 提交上传
+        function submitUpload() {
+            const form = document.getElementById('uploadReportForm');
+            const userId = document.getElementById('uploadUserId').value;
+            const reportType = document.getElementById('uploadReportType').value;
+            const fileInput = document.getElementById('uploadReportFile');
+            const file = fileInput.files[0];
+            const submitBtn = document.getElementById('uploadSubmitBtn');
+            const uploadProgress = document.getElementById('uploadProgress');
+
+            // 验证表单
+            if (!userId) {
+                showNotification('错误', '请选择用户', 'error');
+                return;
+            }
+
+            if (!reportType) {
+                showNotification('错误', '请选择报告类型', 'error');
+                return;
+            }
+
+            if (!file) {
+                showNotification('错误', '请选择要上传的文件', 'error');
+                return;
+            }
+
+            // 再次验证文件
+            if (file.type !== 'application/pdf') {
+                showNotification('错误', '只支持 PDF 格式的文件', 'error');
+                return;
+            }
+
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showNotification('错误', '文件大小超过限制（最大 10MB）', 'error');
+                return;
+            }
+
+            // 构建 FormData
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('report_type', reportType);
+            formData.append('file', file);
+
+            // 显示上传进度
+            uploadProgress.style.display = 'block';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>上传中...';
+
+            // 发送请求
+            fetch('/admin/health_reports/upload', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadProgress.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>开始上传';
+
+                if (data.success) {
+                    showNotification('成功', data.message || '报告上传成功', 'success');
+
+                    // 关闭模态框
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('uploadReportModal'));
+                    modal.hide();
+
+                    // 刷新报告列表
+                    loadReports();
+                } else {
+                    showNotification('错误', data.error || '上传失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('上传失败:', error);
+                uploadProgress.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>开始上传';
+                showNotification('错误', '上传失败，请稍后重试', 'error');
+            });
         }
 
         // 工具函数：格式化日期
