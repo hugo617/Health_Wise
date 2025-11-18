@@ -13,6 +13,8 @@ Rails.application.routes.draw do
   # 用户个人健康报告路由
   get "health_report", to: "health_reports#index", as: :health_report
   get "health_report/:id", to: "health_reports#show", as: :health_report_detail
+  get "health_report/:id/preview", to: "health_reports#preview", as: :health_report_preview
+  get "health_report/:id/download", to: "health_reports#download", as: :health_report_download
 
   # 健康报告 API 接口
   post "health_reports", to: "health_reports#create"
@@ -21,6 +23,17 @@ Rails.application.routes.draw do
   post "health_reports/update_profile", to: "health_reports#update_profile"
   post "health_reports/upload_avatar", to: "health_reports#upload_avatar"
   post "health_reports/upload", to: "health_reports#upload"
+
+  # 大文件上传新路由（分块上传）
+  get "health_reports/upload_new", to: "health_reports#upload_new"
+  post "health_reports/upload_with_progress", to: "health_reports#upload_with_progress"
+  get "health_reports/upload_progress/:upload_id", to: "health_reports#upload_progress"
+  delete "health_reports/cancel_upload/:upload_id", to: "health_reports#cancel_upload"
+  
+  # 移动端专用路由
+  post "health_reports/mobile/upload", to: "health_reports/mobile#upload"
+  post "health_reports/mobile/test_upload", to: "health_reports/mobile#test_upload"
+  get "health_reports/mobile/upload_status/:upload_id", to: "health_reports/mobile#upload_status"
 
   # 管理员健康报告管理路由
   namespace :admin do

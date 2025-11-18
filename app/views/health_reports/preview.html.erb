@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title><%= @health_report.report_type %> - 健康档案</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  
+  <style>
+    :root {
+      --color-primary: #0ea5e9;
+      --color-secondary: #06b6d4;
+      --color-bg: #f8fafc;
+      --color-text: #1e293b;
+      --color-text-light: #64748b;
+      --accent-teal: #14b8a6;
+      --accent-emerald: #10b981;
+      --radius: 12px;
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+      --safe-area-top: env(safe-area-inset-top);
+      --safe-area-bottom: env(safe-area-inset-bottom);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* 顶部导航栏 */
+    .preview-header {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding: calc(var(--safe-area-top) + 12px) 16px 12px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--color-text);
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+
+    .back-btn:active {
+      background: rgba(148, 163, 184, 0.1);
+      transform: scale(0.95);
+    }
+
+    .back-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .header-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-meta {
+      font-size: 12px;
+      color: var(--color-text-light);
+      margin-top: 2px;
+    }
+
+    .download-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--accent-teal), var(--accent-emerald));
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+
+    .download-btn:active {
+      transform: scale(0.95);
+      opacity: 0.9;
+    }
+
+    .download-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* PDF 预览容器 */
+    .preview-container {
+      width: 100%;
+      height: calc(100vh - 60px - var(--safe-area-top));
+      position: relative;
+      background: #525659;
+    }
+
+    .preview-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      touch-action: pan-x pan-y pinch-zoom;
+    }
+
+    /* 移动端提示 */
+    .mobile-preview-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      padding: 32px 24px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      max-width: 320px;
+      width: 90%;
+      z-index: 10;
+    }
+
+    .hint-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .hint-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 12px 0;
+    }
+
+    .hint-text {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0 0 24px 0;
+      line-height: 1.6;
+    }
+
+    .open-pdf-btn {
+      width: 100%;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+    }
+
+    .open-pdf-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 1px 4px rgba(6, 182, 212, 0.3);
+    }
+
+    .hint-note {
+      font-size: 12px;
+      color: #9ca3af;
+      margin: 16px 0 0 0;
+    }
+
+    /* Loading 状态 */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .loading-overlay.hidden {
+      display: none;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(14, 165, 233, 0.2);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--color-text-light);
+    }
+
+    /* Toast 通知 */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-area-bottom) + 24px);
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(30, 41, 59, 0.95);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 14px;
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.error {
+      background: rgba(239, 68, 68, 0.95);
+    }
+
+    .toast.success {
+      background: rgba(16, 185, 129, 0.95);
+    }
+
+    /* 响应式设计 */
+    @media (min-width: 768px) {
+      .preview-header {
+        padding: 16px 24px;
+      }
+
+      .header-title {
+        font-size: 18px;
+      }
+
+      .download-btn {
+        padding: 10px 20px;
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <header class="preview-header">
+    <div class="header-left">
+      <button type="button" class="back-btn" onclick="goBack()" aria-label="返回">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div class="header-info">
+        <h1 class="header-title"><%= @health_report.report_type %></h1>
+        <div class="header-meta">
+          <%= @health_report.created_at.strftime('%Y年%m月%d日') %> ·
+          <%= number_to_human_size(@file_size) %>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="download-btn" onclick="downloadReport()" aria-label="下载报告">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      下载
+    </button>
+  </header>
+
+  <!-- PDF 预览容器 -->
+  <div class="preview-container">
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">正在加载报告...</div>
+    </div>
+
+    <!-- 移动端提示 -->
+    <div class="mobile-preview-hint" id="mobile-hint" style="display: none;">
+      <div class="hint-icon">📄</div>
+      <h3 class="hint-title">移动端 PDF 预览</h3>
+      <p class="hint-text">移动端浏览器将在新标签页中打开 PDF 文件</p>
+      <button type="button" class="open-pdf-btn" onclick="openPdfInNewTab()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+        打开 PDF 文件
+      </button>
+      <p class="hint-note">或点击右上角"下载"按钮保存到本地</p>
+    </div>
+
+    <!-- PDF 预览 iframe（仅桌面端显示） -->
+    <iframe
+      id="preview-iframe"
+      class="preview-iframe"
+      src="<%= @health_report.report_path %>"
+      title="<%= @health_report.report_type %>"
+      onload="hideLoading()">
+    </iframe>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // 检测是否为移动端
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+             (window.innerWidth <= 768);
+    }
+
+    // 在新标签页打开 PDF
+    function openPdfInNewTab() {
+      const pdfUrl = '<%= @health_report.report_path %>';
+      window.open(pdfUrl, '_blank');
+      showToast('已在新标签页打开 PDF', 'success');
+    }
+
+    // 隐藏 loading
+    function hideLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // 返回上一页
+    function goBack() {
+      window.history.back();
+    }
+
+    // 下载报告
+    function downloadReport() {
+      showToast('正在准备下载...', 'info');
+      window.location.href = '<%= health_report_download_path(@health_report) %>';
+
+      // 延迟显示成功提示
+      setTimeout(() => {
+        showToast('下载已开始', 'success');
+      }, 500);
+    }
+
+    // Toast 通知
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast';
+
+      if (type === 'error') {
+        toast.classList.add('error');
+      } else if (type === 'success') {
+        toast.classList.add('success');
+      }
+
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // 页面加载时检测设备类型
+    document.addEventListener('DOMContentLoaded', function() {
+      const iframe = document.getElementById('preview-iframe');
+      const mobileHint = document.getElementById('mobile-hint');
+      const loadingOverlay = document.getElementById('loading-overlay');
+
+      if (isMobileDevice()) {
+        // 移动端：隐藏 iframe，显示提示
+        iframe.style.display = 'none';
+        mobileHint.style.display = 'block';
+        hideLoading();
+
+        // 自动在新标签页打开 PDF（可选）
+        // setTimeout(() => {
+        //   openPdfInNewTab();
+        // }, 500);
+      } else {
+        // 桌面端：显示 iframe，隐藏提示
+        iframe.style.display = 'block';
+        mobileHint.style.display = 'none';
+
+        // 监听 iframe 加载错误
+        iframe.addEventListener('error', function() {
+          hideLoading();
+          showToast('报告加载失败，请稍后重试', 'error');
+        });
+
+        // 页面加载超时处理
+        setTimeout(() => {
+          if (loadingOverlay && !loadingOverlay.classList.contains('hidden')) {
+            hideLoading();
+            showToast('报告加载时间较长，请耐心等待', 'info');
+          }
+        }, 5000);
+      }
+    });
+  </script>
+</body>
+</html>
+
+

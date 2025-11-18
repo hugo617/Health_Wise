@@ -1,0 +1,350 @@
+<!-- 移动端上传兼容性修复 -->
+<script>
+// 移动端上传兼容性增强
+(function() {
+  'use strict';
+  
+  // 移动端检测
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+  }
+  
+  // 移动端上传增强
+  function enhanceMobileUpload() {
+    console.log('移动端上传增强已加载');
+    
+    // 文件输入增强
+    const fileInput = document.getElementById('upload-file');
+    if (fileInput) {
+      // 移动端文件选择优化
+      fileInput.addEventListener('click', function(e) {
+        console.log('移动端文件选择器已激活');
+        
+        // 移动端特殊处理
+        if (isMobileDevice()) {
+          // 确保接受正确的文件类型
+          this.accept = '.pdf,application/pdf';
+          
+          // 移动端捕获优化
+          this.setAttribute('capture', 'environment'); // 优先使用相机扫描文档
+          
+          console.log('移动端文件选择器配置:', {
+            accept: this.accept,
+            capture: this.getAttribute('capture'),
+            multiple: this.multiple
+          });
+        }
+      });
+      
+      // 文件选择处理增强
+      fileInput.addEventListener('change', function(e) {
+        console.log('文件选择事件触发:', e.target.files.length, '个文件');
+        
+        const file = e.target.files[0];
+        if (!file) {
+          console.log('未选择文件');
+          return;
+        }
+        
+        console.log('选择的文件信息:', {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          lastModified: file.lastModified
+        });
+        
+        // 移动端特殊验证
+        if (isMobileDevice()) {
+          // 检查文件类型（移动端可能返回不同的MIME类型）
+          const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+          
+          if (!isPDF) {
+            console.error('移动端文件类型验证失败:', file.type, file.name);
+            showToast('请选择PDF格式的文件', 'error');
+            e.target.value = '';
+            return;
+          }
+          
+          // 检查文件大小（移动端可能有更严格的限制）
+          const maxSize = 500 * 1024 * 1024; // 500MB
+          if (file.size > maxSize) {
+            console.error('移动端文件大小超限:', file.size, '>', maxSize);
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            showToast(`文件大小超过限制（最大500MB），当前：${sizeMB}MB`, 'error');
+            e.target.value = '';
+            return;
+          }
+          
+          console.log('移动端文件验证通过');
+        }
+      });
+    }
+    
+    // 表单提交增强
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+      console.log('上传表单增强已应用');
+      
+      // 确保CSRF令牌存在
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+      if (!csrfToken) {
+        console.error('CSRF令牌未找到，可能导致上传失败');
+      } else {
+        console.log('CSRF令牌已找到:', csrfToken.substring(0, 10) + '...');
+      }
+    }
+  }
+  
+  // 上传请求增强
+  function enhanceUploadRequest(xhr, formData) {
+    console.log('增强上传请求配置');
+    
+    // 移动端特殊头信息
+    if (isMobileDevice()) {
+      console.log('应用移动端请求头优化');
+      
+      // 确保必要的头信息
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      xhr.setRequestHeader('Accept', 'application/json, text/javascript, */*; q=0.01');
+      
+      // 移动端优化
+      xhr.timeout = 300000; // 5分钟超时（移动端可能需要更长时间）
+      
+      console.log('移动端请求头配置完成');
+    }
+    
+    // 错误处理增强
+    xhr.addEventListener('error', function(e) {
+      console.error('上传请求错误:', e);
+      
+      // 移动端特殊错误处理
+      if (isMobileDevice()) {
+        let errorMessage = '上传失败';
+        
+        // 网络错误
+        if (xhr.status === 0) {
+          errorMessage = '网络连接失败，请检查网络设置';
+        }
+        // 超时错误
+        else if (xhr.status === 408 || xhr.timeout) {
+          errorMessage = '上传超时，请重试或选择较小的文件';
+        }
+        // 服务器错误
+        else if (xhr.status >= 500) {
+          errorMessage = '服务器错误，请稍后重试';
+        }
+        // 客户端错误
+        else if (xhr.status >= 400) {
+          errorMessage = '请求错误，请检查文件格式和大小';
+        }
+        
+        showToast(errorMessage, 'error');
+      }
+    });
+    
+    // 超时处理
+    xhr.addEventListener('timeout', function() {
+      console.error('上传请求超时');
+      showToast('上传超时，请重试或选择较小的文件', 'error');
+    });
+  }
+  
+  // 响应处理增强
+  function enhanceResponseHandling(xhr) {
+    const originalLoadHandler = xhr.onload;
+    
+    xhr.addEventListener('load', function() {
+      console.log('响应接收完成:', {
+        status: xhr.status,
+        statusText: xhr.statusText,
+        responseType: xhr.responseType,
+        responseURL: xhr.responseURL
+      });
+      
+      // 移动端响应处理
+      if (isMobileDevice()) {
+        console.log('应用移动端响应处理');
+        
+        try {
+          const contentType = xhr.getResponseHeader('Content-Type');
+          console.log('响应Content-Type:', contentType);
+          
+          // 检查响应格式
+          if (contentType && contentType.includes('application/json')) {
+            console.log('响应格式正确：JSON');
+          } else {
+            console.warn('响应格式可能不正确:', contentType);
+          }
+          
+          // 继续原始处理
+          if (originalLoadHandler) {
+            originalLoadHandler.call(xhr);
+          }
+          
+        } catch (e) {
+          console.error('移动端响应处理错误:', e);
+          showToast('解析响应数据失败', 'error');
+        }
+      } else {
+        // 非移动端，使用原始处理
+        if (originalLoadHandler) {
+          originalLoadHandler.call(xhr);
+        }
+      }
+    });
+  }
+  
+  // 网络状态检测
+  function checkNetworkStatus() {
+    if ('connection' in navigator) {
+      const connection = navigator.connection;
+      console.log('网络状态:', {
+        effectiveType: connection.effectiveType,
+        downlink: connection.downlink,
+        rtt: connection.rtt,
+        saveData: connection.saveData
+      });
+      
+      // 慢网络警告
+      if (connection.effectiveType === '2g' || connection.saveData) {
+        console.warn('慢网络环境检测');
+        showToast('检测到慢网络，大文件上传可能需要更长时间', 'info');
+      }
+    }
+  }
+  
+  // 初始化
+  function init() {
+    console.log('移动端上传增强初始化');
+    console.log('设备类型:', isMobileDevice() ? '移动端' : '桌面端');
+    console.log('用户代理:', navigator.userAgent);
+    
+    // 检查网络状态
+    checkNetworkStatus();
+    
+    // 增强文件输入
+    enhanceMobileUpload();
+    
+    console.log('移动端上传增强初始化完成');
+  }
+  
+  // 页面加载完成后初始化
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  
+  // 暴露全局函数供其他代码调用
+  window.MobileUploadEnhancer = {
+    isMobileDevice: isMobileDevice,
+    enhanceUploadRequest: enhanceUploadRequest,
+    enhanceResponseHandling: enhanceResponseHandling,
+    checkNetworkStatus: checkNetworkStatus
+  };
+  
+})();
+</script>
+
+<!-- 移动端错误处理增强 -->
+<script>
+// 全局错误处理
+window.addEventListener('error', function(e) {
+  if (e.filename && e.filename.includes('upload')) {
+    console.error('上传相关错误:', e.message, e.filename, e.lineno, e.colno);
+    
+    // 移动端特殊处理
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      console.log('移动端上传错误已捕获');
+      
+      // 显示用户友好的错误提示
+      if (window.showToast) {
+        let userMessage = '操作失败，请重试';
+        
+        if (e.message.includes('File')) {
+          userMessage = '文件处理失败，请选择正确的文件';
+        } else if (e.message.includes('Network')) {
+          userMessage = '网络连接失败，请检查网络设置';
+        } else if (e.message.includes('Permission')) {
+          userMessage = '权限不足，请检查文件访问权限';
+        }
+        
+        showToast(userMessage, 'error');
+      }
+    }
+  }
+});
+
+// 未处理的Promise拒绝
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('未处理的Promise拒绝:', e.reason);
+  
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    if (window.showToast) {
+      showToast('操作失败，请重试', 'error');
+    }
+  }
+});
+</script>
+
+<!-- 移动端样式优化 -->
+<style>
+/* 移动端触摸优化 */
+@media (max-width: 768px) {
+  /* 文件输入触摸区域增大 */
+  #upload-file {
+    min-height: 44px; /* iOS推荐的最小触摸目标 */
+    font-size: 16px; /* 防止iOS自动缩放 */
+  }
+  
+  /* 按钮触摸优化 */
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 16px;
+  }
+  
+  /* 模态框触摸优化 */
+  .modal-content {
+    max-height: 90vh; /* 防止内容超出屏幕 */
+    overflow-y: auto;
+  }
+  
+  /* 进度显示优化 */
+  .upload-progress {
+    font-size: 14px;
+  }
+  
+  /* 文件信息显示优化 */
+  #file-info {
+    font-size: 14px;
+  }
+}
+
+/* 移动端网络状态指示器 */
+.network-status {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 9999;
+  display: none;
+}
+
+.network-status.show {
+  display: block;
+}
+
+.network-status.slow {
+  background: rgba(255, 165, 0, 0.8);
+}
+
+.network-status.offline {
+  background: rgba(255, 0, 0, 0.8);
+}
+</style>

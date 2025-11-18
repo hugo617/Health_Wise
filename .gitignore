@@ -44,6 +44,11 @@
 .DS_Store
 .trae/
 
+# ============================================
+# 测试文件和功能说明文档（不提交到Git）
+# ============================================
+
+# 功能说明和文档文件
 rails.md
 BUG_FIX_REPORT.md
 SMS_VERIFICATION_TEST_REPORT.md
@@ -53,6 +58,7 @@ AUTHENTICATION_TEST_GUIDE.md
 AUTHENTICATION_IMPLEMENTATION_SUMMARY.md
 FINAL_TEST_REPORT.md
 
+# 测试脚本文件
 test_user_management.rb
 test_refactored_services.rb
 test_frontend_integration.rb
@@ -61,7 +67,6 @@ test_health_report_management.rb
 HEALTH_REPORTS_REFACTORING_TEST.md
 HEALTH_REPORT_UPLOAD_DELIVERY.md
 UPLOAD_UI_IMPLEMENTATION.md
-public/uploads/
 test_upload_health_report.rb
 AVATAR_UPLOAD_IMPLEMENTATION_REPORT.md
 HEALTH_REPORT_DATA_BINDING_DELIVERY.md
@@ -72,3 +77,225 @@ test_avatar_api.rb
 test_avatar_upload.html
 test_inline_edit.rb
 test_profile_update.rb
+
+# 移动端上传修复相关文件
+test_real_upload_diagnostic.rb
+test_upload_solution.rb
+test_mobile_upload_diagnostic.rb
+test_mobile_upload_final.rb
+test_mobile_simple.rb
+test_mobile_detailed.rb
+MOBILE_UPLOAD_FIX_REPORT.md
+SIMPLE_MOBILE_FIX.md
+FINAL_MOBILE_UPLOAD_FIX_REPORT.md
+
+# 功能实现报告文件
+ACCESS_URLS.md
+FINAL_FIX_COMPLETE.md
+FINAL_GLOBAL_ACCESS.md
+FINAL_PUBLIC_ACCESS.md
+HOST_AUTHORIZATION_FIX_REPORT.md
+NETWORK_ACCESS_GUIDE.md
+PUBLIC_ACCESS_CONFIG.md
+PUBLIC_ACCESS_GUIDE.md
+README_ACCESS.md
+USER_ACCESS_GUIDE.md
+
+# 部署和配置相关文件
+.vercel/
+.vercelignore
+ngrok.log
+server.log
+vercel.json
+
+# 测试上传目录
+public/uploads/
+public/test/
+public/access.html
+public/index.html
+public/mobile_access.html
+
+# ============================================
+# 测试文件和功能说明文档（不提交到Git）
+# ============================================
+
+# 忽略所有.md文件，除了README.md
+*.md
+!README.md
+
+# 忽略所有测试脚本（以test_开头的Ruby文件）
+test_*.rb
+
+# 忽略所有诊断和测试工具
+*diagnostic*.rb
+*upload*.rb
+
+# 忽略特定的测试文件
+test_real_upload_diagnostic.rb
+test_upload_solution.rb
+test_mobile_upload_diagnostic.rb
+test_mobile_upload_final.rb
+test_mobile_simple.rb
+test_mobile_detailed.rb
+
+# 忽略移动端修复相关文件
+MOBILE_UPLOAD_FIX_REPORT.md
+SIMPLE_MOBILE_FIX.md
+FINAL_MOBILE_UPLOAD_FIX_REPORT.md
+
+# 忽略功能实现报告文件
+BUG_FIX_AND_OPTIMIZATION_REPORT.md
+SMS_VERIFICATION_TEST_REPORT.md
+TESTING_GUIDE.md
+AUTHENTICATION_TEST_GUIDE.md
+AUTHENTICATION_IMPLEMENTATION_SUMMARY.md
+FINAL_TEST_REPORT.md
+
+# 忽略访问和网络配置报告
+ACCESS_URLS.md
+FINAL_FIX_COMPLETE.md
+FINAL_GLOBAL_ACCESS.md
+FINAL_PUBLIC_ACCESS.md
+HOST_AUTHORIZATION_FIX_REPORT.md
+NETWORK_ACCESS_GUIDE.md
+PUBLIC_ACCESS_CONFIG.md
+PUBLIC_ACCESS_GUIDE.md
+README_ACCESS.md
+USER_ACCESS_GUIDE.md
+
+# 忽略部署和配置相关文件
+.vercel/
+.vercelignore
+ngrok.log
+server.log
+vercel.json
+
+# 忽略特定的测试数据文件
+public/test_profile_update.html
+test_avatar_api.rb
+test_avatar_upload.html
+test_inline_edit.rb
+test_profile_update.rb
+
+# 忽略其他测试相关文件
+HEALTH_REPORTS_REFACTORING_TEST.md
+HEALTH_REPORT_UPLOAD_DELIVERY.md
+UPLOAD_UI_IMPLEMENTATION.md
+AVATAR_UPLOAD_IMPLEMENTATION_REPORT.md
+HEALTH_REPORT_DATA_BINDING_DELIVERY.md
+PREVIEW_DOWNLOAD_FIX.md
+PROFILE_UPDATE_FIX_REPORT.md
+
+# ============================================
+# 工具脚本和诊断文件（不提交到Git）
+# ============================================
+
+# 忽略工具脚本（以check_、start_、stop_、test_开头的脚本）
+check_*.sh
+start_*.sh
+stop_*.sh
+test_*.sh
+
+# 忽略诊断报告文件（包含diagnostic和test_report的文件）
+*diagnostic*.json
+*test_report*.json
+*test_*.json
+
+# 忽略特定的工具脚本
+check_status.sh
+start_global_access.sh
+stop_all.sh
+test_file_size_limit.sh
+
+# 忽略特定的诊断报告
+mobile_upload_diagnostic_*.json
+mobile_upload_final_test_*.json
+upload_diagnostic_report_*.json
+upload_progress_test_report_*.json
+
+# 忽略Rake任务文件（测试用途）
+lib/tasks/*_cleanup.rake
+lib/tasks/*_diagnostic.rake
+lib/tasks/*_test.rake
+
+# 忽略Rails标准测试文件（如果存在）
+test/models/*_test.rb
+test/controllers/*_test.rb
+test/integration/*_test.rb
+test/system/*_test.rb
+
+# ============================================
+# 其他临时文件和开发工具文件
+# ============================================
+
+# 临时文件和缓存
+*.tmp
+*.temp
+*.cache
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# 编辑器配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+Thumbs.db
+desktop.ini
+
+# RubyMine / IntelliJ IDEA
+*.iml
+.idea/
+
+# 备份文件
+*.bak
+*.backup
+
+# 测试覆盖率报告
+coverage/
+.coverage
+
+# 本地配置文件
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 临时测试数据
+tmp/test_files/
+tmp/mobile_uploads/
+tmp/diagnostics/
+
+# 性能测试报告
+performance_reports/
+benchmark_results/
+
+# 部署临时文件
+deploy/
+build/
+dist/
+
+
+.vercel/
+.vercelignore
+ACCESS_URLS.md
+FINAL_FIX_COMPLETE.md
+FINAL_GLOBAL_ACCESS.md
+FINAL_PUBLIC_ACCESS.md
+HOST_AUTHORIZATION_FIX_REPORT.md
+NETWORK_ACCESS_GUIDE.md
+PUBLIC_ACCESS_CONFIG.md
+PUBLIC_ACCESS_GUIDE.md
+README_ACCESS.md
+USER_ACCESS_GUIDE.md
+ngrok.log
+public/access.html
+public/index.html
+public/mobile_access.html
+server.log
+vercel.json

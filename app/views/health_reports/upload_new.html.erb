@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传健康报告 - Health Wise</title>
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+    
+    <!-- 引入现有样式 -->
+    <%= stylesheet_link_tag 'application', 'data-turbo-track': 'reload' %>
+    <%= javascript_importmap_tags %>
+    
+    <style>
+        /* 现代化上传界面样式 */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .upload-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            padding: 3rem;
+            max-width: 800px;
+            width: 100%;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .upload-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .upload-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .upload-header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* 拖拽上传区域 */
+        .drop-zone {
+            border: 3px dashed rgba(255, 255, 255, 0.3);
+            border-radius: var(--border-radius);
+            padding: 4rem 2rem;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .drop-zone:hover::before {
+            left: 100%;
+        }
+
+        .drop-zone:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .drop-zone.drag-over {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .drop-zone-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .drop-zone-text {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-hint {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        /* 文件输入（隐藏） */
+        .file-input {
+            display: none;
+        }
+
+        /* 文件信息卡片 */
+        .file-info-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-info-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--success-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .file-details h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .file-details p {
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* 报告类型选择 */
+        .report-type-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .report-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .report-type-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+
+        .report-type-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .report-type-card.selected {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+        }
+
+        .report-type-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .report-type-name {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .report-type-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        /* 上传进度 */
+        .upload-progress {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-title {
+            color: white;
+            font-weight: 600;
+        }
+
+        .progress-percentage {
+            color: #4facfe;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--success-gradient);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* 状态消息 */
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .status-error {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #f43f5e;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .upload-container {
+                padding: 1rem;
+            }
+            
+            .upload-card {
+                padding: 2rem;
+            }
+            
+            .upload-header h1 {
+                font-size: 2rem;
+            }
+            
+            .drop-zone {
+                padding: 3rem 1rem;
+            }
+            
+            .report-type-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* 加载动画 */
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <div class="upload-card">
+            <div class="upload-header">
+                <h1>上传健康报告</h1>
+                <p>支持 PDF 格式，最大 500MB</p>
+            </div>
+
+            <!-- 拖拽上传区域 -->
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content">
+                    <span class="drop-zone-icon">📁</span>
+                    <div class="drop-zone-text">拖拽文件到此处或点击选择</div>
+                    <div class="drop-zone-hint">只支持 PDF 格式</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf,application/pdf">
+            </div>
+
+            <!-- 文件信息 -->
+            <div class="file-info-card" id="fileInfoCard">
+                <div class="file-info-header">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <h3 id="fileName">文件名.pdf</h3>
+                        <p id="fileSize">大小: 0 MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 报告类型选择 -->
+            <div class="report-type-section">
+                <h2 class="section-title">
+                    <span>📋</span>
+                    选择报告类型
+                </h2>
+                <div class="report-type-grid">
+                    <div class="report-type-card" data-type="基因检查报告">
+                        <span class="report-type-icon">🧬</span>
+                        <div class="report-type-name">基因检查报告</div>
+                        <div class="report-type-desc">基因检测分析结果</div>
+                    </div>
+                    <div class="report-type-card" data-type="蛋白质检测报告">
+                        <span class="report-type-icon">🧪</span>
+                        <div class="report-type-name">蛋白质检测报告</div>
+                        <div class="report-type-desc">蛋白质指标分析</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传进度 -->
+            <div class="upload-progress" id="uploadProgress">
+                <div class="progress-header">
+                    <span class="progress-title">上传进度</span>
+                    <span class="progress-percentage" id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span id="uploadedSize">已上传: 0 MB</span>
+                    <span id="uploadSpeed">速度: 0 MB/s</span>
+                    <span id="remainingTime">剩余时间: 计算中...</span>
+                </div>
+            </div>
+
+            <!-- 状态消息 -->
+            <div class="status-message" id="statusMessage"></div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                    <span>←</span>
+                    返回
+                </button>
+                <button type="button" class="btn btn-primary" id="uploadBtn" disabled>
+                    <span>📤</span>
+                    开始上传
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ModernUploader {
+            constructor() {
+                this.dropZone = document.getElementById('dropZone');
+                this.fileInput = document.getElementById('fileInput');
+                this.fileInfoCard = document.getElementById('fileInfoCard');
+                this.uploadBtn = document.getElementById('uploadBtn');
+                this.uploadProgress = document.getElementById('uploadProgress');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressPercentage = document.getElementById('progressPercentage');
+                this.uploadedSize = document.getElementById('uploadedSize');
+                this.uploadSpeed = document.getElementById('uploadSpeed');
+                this.remainingTime = document.getElementById('remainingTime');
+                this.statusMessage = document.getElementById('statusMessage');
+                
+                this.selectedFile = null;
+                this.selectedReportType = null;
+                this.uploadStartTime = null;
+                this.lastUploadedBytes = 0;
+                
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                // 拖拽事件
+                this.dropZone.addEventListener('click', () => this.fileInput.click());
+                this.dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                this.dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                this.dropZone.addEventListener('drop', this.handleDrop.bind(this));
+                
+                // 文件选择事件
+                this.fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+                
+                // 上传按钮事件
+                this.uploadBtn.addEventListener('click', this.handleUpload.bind(this));
+                
+                // 报告类型选择事件
+                document.querySelectorAll('.report-type-card').forEach(card => {
+                    card.addEventListener('click', this.handleReportTypeSelect.bind(this));
+                });
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                this.dropZone.classList.add('drag-over');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                this.dropZone.classList.remove('drag-over');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                this.dropZone.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    this.processFile(files[0]);
+                }
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.processFile(file);
+                }
+            }
+
+            processFile(file) {
+                // 验证文件类型
+                if (file.type !== 'application/pdf') {
+                    this.showStatus('请选择 PDF 格式的文件', 'error');
+                    return;
+                }
+
+                // 验证文件大小
+                const maxSize = 500 * 1024 * 1024; // 500MB
+                if (file.size > maxSize) {
+                    this.showStatus('文件大小超过限制（最大 500MB）', 'error');
+                    return;
+                }
+
+                this.selectedFile = file;
+                this.displayFileInfo(file);
+                this.updateUploadButton();
+            }
+
+            displayFileInfo(file) {
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = `大小: ${this.formatFileSize(file.size)}`;
+                this.fileInfoCard.style.display = 'block';
+            }
+
+            handleReportTypeSelect(e) {
+                // 移除之前的选中状态
+                document.querySelectorAll('.report-type-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                // 添加选中状态
+                e.currentTarget.classList.add('selected');
+                this.selectedReportType = e.currentTarget.dataset.type;
+                this.updateUploadButton();
+            }
+
+            updateUploadButton() {
+                const canUpload = this.selectedFile && this.selectedReportType;
+                this.uploadBtn.disabled = !canUpload;
+            }
+
+            async handleUpload() {
+                if (!this.selectedFile || !this.selectedReportType) {
+                    this.showStatus('请选择文件和报告类型', 'error');
+                    return;
+                }
+
+                this.uploadStartTime = Date.now();
+                this.lastUploadedBytes = 0;
+
+                // 构建 FormData
+                const formData = new FormData();
+                formData.append('report_type', this.selectedReportType);
+                formData.append('file', this.selectedFile);
+
+                // 显示进度区域
+                this.uploadProgress.style.display = 'block';
+                this.uploadBtn.disabled = true;
+                this.uploadBtn.innerHTML = '<span class="loading-spinner"></span> 上传中...';
+
+                try {
+                    const xhr = new XMLHttpRequest();
+                    
+                    // 进度事件监听
+                    xhr.upload.addEventListener('progress', this.handleUploadProgress.bind(this));
+                    
+                    // 完成事件
+                    xhr.addEventListener('load', this.handleUploadComplete.bind(this));
+                    
+                    // 错误事件
+                    xhr.addEventListener('error', this.handleUploadError.bind(this));
+                    
+                    // 取消事件
+                    xhr.addEventListener('abort', this.handleUploadAbort.bind(this));
+
+                    // 开始上传
+                    xhr.open('POST', '/health_reports/upload_with_progress');
+                    xhr.setRequestHeader('X-CSRF-Token', document.querySelector('meta[name="csrf-token"]').content);
+                    xhr.setRequestHeader('Accept', 'application/json');
+                    
+                    xhr.send(formData);
+
+                } catch (error) {
+                    this.handleUploadError(error);
+                }
+            }
+
+            handleUploadProgress(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    const uploadedBytes = e.loaded;
+                    const totalBytes = e.total;
+                    
+                    // 更新进度条
+                    this.progressBar.style.width = percentComplete + '%';
+                    this.progressPercentage.textContent = Math.round(percentComplete) + '%';
+                    
+                    // 更新已上传大小
+                    this.uploadedSize.textContent = `已上传: ${this.formatFileSize(uploadedBytes)} / ${this.formatFileSize(totalBytes)}`;
+                    
+                    // 计算上传速度
+                    const currentTime = Date.now();
+                    const timeElapsed = (currentTime - this.uploadStartTime) / 1000; // 秒
+                    const speed = uploadedBytes / timeElapsed; // bytes per second
+                    this.uploadSpeed.textContent = `速度: ${this.formatFileSize(speed)}/s`;
+                    
+                    // 计算剩余时间
+                    if (speed > 0) {
+                        const remainingBytes = totalBytes - uploadedBytes;
+                        const remainingTime = remainingBytes / speed; // 秒
+                        this.remainingTime.textContent = `剩余时间: ${this.formatTime(remainingTime)}`;
+                    }
+                }
+            }
+
+            handleUploadComplete(e) {
+                const xhr = e.target;
+                
+                this.uploadBtn.disabled = false;
+                this.uploadBtn.innerHTML = '<span>📤</span> 开始上传';
+                
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        
+                        if (response.success) {
+                            this.showStatus('报告上传成功！', 'success');
+                            
+                            // 2秒后跳转到报告列表页
+                            setTimeout(() => {
+                                window.location.href = '/health_reports';
+                            }, 2000);
+                        } else {
+                            this.showStatus(response.error || '上传失败', 'error');
+                        }
+                    } catch (error) {
+                        this.showStatus('解析响应数据失败', 'error');
+                    }
+                } else {
+                    this.showStatus(`上传失败 (HTTP ${xhr.status})`, 'error');
+                }
+            }
+
+            handleUploadError(error) {
+                console.error('上传错误:', error);
+                this.uploadBtn.disabled = false;
+                this.uploadBtn.innerHTML = '<span>📤</span> 开始上传';
+                this.showStatus('上传失败，请检查网络连接后重试', 'error');
+            }
+
+            handleUploadAbort() {
+                this.uploadBtn.disabled = false;
+                this.uploadBtn.innerHTML = '<span>📤</span> 开始上传';
+                this.showStatus('上传已取消', 'error');
+            }
+
+            showStatus(message, type) {
+                this.statusMessage.textContent = message;
+                this.statusMessage.className = `status-message status-${type}`;
+                this.statusMessage.style.display = 'block';
+                
+                // 3秒后自动隐藏错误消息
+                if (type === 'error') {
+                    setTimeout(() => {
+                        this.statusMessage.style.display = 'none';
+                    }, 3000);
+                }
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            formatTime(seconds) {
+                if (seconds < 60) return Math.round(seconds) + ' 秒';
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.round(seconds % 60);
+                return minutes + ' 分 ' + remainingSeconds + ' 秒';
+            }
+        }
+
+        // 初始化上传器
+        document.addEventListener('DOMContentLoaded', () => {
+            new ModernUploader();
+        });
+    </script>
+</body>
+</html>

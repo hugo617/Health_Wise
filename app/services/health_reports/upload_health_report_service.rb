@@ -102,9 +102,9 @@ class HealthReports::UploadHealthReportService
       return { success: false, error: '文件扩展名必须为 .pdf' }
     end
 
-    # 验证文件大小（最大 10MB）
-    if @report_file.size > 10.megabytes
-      return { success: false, error: '报告文件不能超过 10MB' }
+    # 验证文件大小（最大 500MB）
+    if @report_file.size > 500.megabytes
+      return { success: false, error: '报告文件不能超过 500MB' }
     end
 
     # 验证文件名安全性（防止路径遍历攻击）

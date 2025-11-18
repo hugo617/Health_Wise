@@ -731,6 +731,8 @@
       cursor: pointer;
       transition: var(--transition-fast);
       position: relative;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .report-card::after {
@@ -750,6 +752,11 @@
     .report-card:hover::after {
       border-color: var(--accent-teal);
       transform: translateY(-50%) rotate(-45deg) translateX(2px);
+    }
+
+    .report-card:active {
+      background: rgba(6, 182, 212, 0.05);
+      transform: scale(0.98);
     }
 
     .report-header {
@@ -818,26 +825,6 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-    }
-
-    .report-action-btn {
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: #f9fafb;
-      color: #4b5563;
-      font-size: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      transition: var(--transition-fast);
-    }
-
-    .report-action-btn:hover {
-      background: #eef2ff;
-      border-color: var(--accent-teal);
-      color: var(--accent-teal);
     }
 
     .report-group-protein .group-header {
@@ -1060,27 +1047,6 @@
 
       .reports-section {
         padding-bottom: 16px;
-      }
-    }
-
-    /* 预览模态框特定样式 */
-    #preview-modal .modal-content {
-      max-width: 900px;
-      width: 90%;
-    }
-
-    #preview-modal .modal-body {
-      padding: 16px;
-    }
-
-    .preview-frame-wrapper {
-      width: 100%;
-    }
-
-    @media (max-width: 768px) {
-      #preview-modal .modal-content {
-        max-width: 95%;
-        width: 95%;
       }
     }
 
@@ -1309,14 +1275,6 @@
                     <div class="report-tags">
                       <span class="report-tag tag-normal">最新报告</span>
                     </div>
-                    <div class="report-actions">
-                      <button type="button" class="report-action-btn report-preview-btn">
-                        <span>预览</span>
-                      </button>
-                      <button type="button" class="report-action-btn report-download-btn">
-                        <span>下载</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               <% end %>
@@ -1390,7 +1348,7 @@
             <label for="upload-file">选择文件 <span style="color: #f43f5e;">*</span></label>
             <input type="file" id="upload-file" class="form-control" accept=".pdf,application/pdf" required>
             <small style="color: var(--color-text-light); display: block; margin-top: 8px;">
-              只支持 PDF 格式，文件大小不超过 10MB
+              只支持 PDF 格式，文件大小不超过 500MB
             </small>
             <div id="file-info" style="display: none; margin-top: 12px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border-left: 3px solid var(--color-primary);">
               <div style="display: flex; align-items: center; gap: 8px; color: var(--color-primary);">
@@ -1441,7 +1399,7 @@
   </div>
 
   <!-- 报告预览模态框 -->
-  <div class="modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+  <div class="modal" id="preview-modal-removed" role="dialog" aria-modal="true" aria-labelledby="preview-title" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="preview-title">
@@ -2086,90 +2044,15 @@
           const reportCard = e.target.closest('.report-card');
           if (!reportCard) return;
 
-          const previewBtn = e.target.closest('.report-preview-btn');
-          const downloadBtn = e.target.closest('.report-download-btn');
-
-          e.preventDefault();
-
-          if (downloadBtn) {
-            this.downloadReport(reportCard);
-          } else {
-            // 默认行为：预览报告
-            this.previewReport(reportCard);
+          const reportId = reportCard.dataset.reportId;
+          if (!reportId) {
+            console.error('报告 ID 不存在');
+            return;
           }
+
+          // 跳转到预览页面
+          window.location.href = `/health_report/${reportId}/preview`;
         });
-      }
-
-      previewReport(reportCard) {
-        const titleEl = reportCard.querySelector('.report-title');
-        const dateEl = reportCard.querySelector('.report-date');
-        const reportType = reportCard.dataset.reportType || (titleEl ? titleEl.textContent : '健康检查报告');
-        const reportPath = reportCard.dataset.reportPath;
-
-        if (!reportPath) {
-          showToast('报告文件路径不存在，无法预览', 'error');
-          return;
-        }
-
-        const modal = document.getElementById('preview-modal');
-        const frame = document.getElementById('preview-frame');
-        const previewTitle = document.getElementById('preview-report-title');
-        const previewMeta = document.getElementById('preview-report-meta');
-
-        if (!modal || !frame) {
-          console.error('预览模态框未初始化');
-          showToast('预览组件未就绪，请刷新页面后重试', 'error');
-          return;
-        }
-
-        const title = titleEl ? titleEl.textContent : '健康检查报告';
-        const dateText = dateEl ? dateEl.textContent : '';
-
-        if (previewTitle) {
-          previewTitle.textContent = title;
-        }
-        if (previewMeta) {
-          previewMeta.textContent = dateText ? (reportType + ' · ' + dateText) : reportType;
-        }
-
-        frame.src = reportPath;
-
-        // 显示模态框
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      }
-
-      downloadReport(reportCard) {
-        const dateEl = reportCard.querySelector('.report-date');
-        const reportType = reportCard.dataset.reportType || '健康检查报告';
-        const reportPath = reportCard.dataset.reportPath;
-
-        if (!reportPath) {
-          showToast('报告文件路径不存在，无法下载', 'error');
-          return;
-        }
-
-        const rawDate = dateEl ? dateEl.textContent : '';
-        const normalizedDate = rawDate.replace(/\./g, '-').replace(/\//g, '-').substring(0, 10);
-        const filename = reportType + '_' + (normalizedDate || '报告') + '.pdf';
-
-        try {
-          const link = document.createElement('a');
-          link.href = reportPath;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          showToast('开始下载报告...', 'info');
-        } catch (error) {
-          console.error('下载报告失败:', error);
-          showToast('下载失败，请稍后重试', 'error');
-        }
-      }
-
-      // 保留 openReport 方法以兼容旧代码，内部委托给 previewReport
-      openReport(reportCard) {
-        this.previewReport(reportCard);
       }
 
       refreshReports() {
@@ -2325,24 +2208,6 @@
       document.body.style.overflow = '';
     }
 
-    function closePreviewModal() {
-      const modal = document.getElementById('preview-modal');
-      const frame = document.getElementById('preview-frame');
-
-      if (modal) {
-        // 移除 active 类触发淡出动画
-        modal.classList.remove('active');
-      }
-      if (frame) {
-        // 延迟清空 iframe src，等待动画完成
-        setTimeout(() => {
-          frame.src = '';
-        }, 240);
-      }
-
-      document.body.style.overflow = '';
-    }
-
 
     // 文件选择处理
     document.addEventListener('DOMContentLoaded', () => {
@@ -2370,11 +2235,11 @@
             return;
           }
 
-          // 验证文件大小（10MB）
-          const maxSize = 10 * 1024 * 1024;
+          // 验证文件大小（500MB）
+          const maxSize = 500 * 1024 * 1024;
           if (file.size > maxSize) {
             fileError.style.display = 'block';
-            fileErrorMessage.textContent = `文件大小超过限制（最大 10MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            fileErrorMessage.textContent = `文件大小超过限制（最大 500MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
             fileInput.value = '';
             return;
           }
@@ -2421,9 +2286,9 @@
         return;
       }
 
-      const maxSize = 10 * 1024 * 1024;
+      const maxSize = 500 * 1024 * 1024;
       if (file.size > maxSize) {
-        showToast('文件大小超过限制（最大 10MB）', 'error');
+        showToast('文件大小超过限制（最大 500MB）', 'error');
         return;
       }
 
@@ -2437,33 +2302,83 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; margin-right: 6px;"></div>上传中...';
 
-      try {
-        const response = await fetch('/health_reports/upload', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-          },
-          body: formData
-        });
-
-        const data = await response.json();
-
+      // 使用XMLHttpRequest实现进度跟踪
+      const xhr = new XMLHttpRequest();
+      
+      // 进度事件监听
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+          const percentComplete = (e.loaded / e.total) * 100;
+          const progressBar = document.querySelector('.loading-spinner').parentElement;
+          
+          // 更新进度显示
+          progressBar.innerHTML = `<div class="loading-spinner" style="width: 16px; height: 16px; margin-right: 6px;"></div>上传中... ${Math.round(percentComplete)}%`;
+          
+          // 更新进度条样式
+          const progressFill = document.createElement('div');
+          progressFill.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: ${percentComplete}%;
+            background: linear-gradient(90deg, var(--accent-teal), var(--accent-emerald));
+            border-radius: 8px;
+            transition: width 0.3s ease;
+          `;
+          
+          // 可以在这里添加更详细的进度条
+          console.log(`上传进度: ${Math.round(percentComplete)}% (${e.loaded}/${e.total} bytes)`);
+        }
+      });
+      
+      // 加载完成事件
+      xhr.addEventListener('load', function() {
         uploadProgress.style.display = 'none';
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>开始上传';
-
-        if (data.success) {
-          showToast(data.message || '报告上传成功', 'success');
-          closeUploadModal();
-
-          // 刷新页面以显示新上传的报告
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        } else {
-          showToast(data.error || '上传失败', 'error');
+        
+        try {
+          const data = JSON.parse(xhr.responseText);
+          
+          if (data.success) {
+            showToast(data.message || '报告上传成功', 'success');
+            closeUploadModal();
+            
+            // 刷新页面以显示新上传的报告
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            showToast(data.error || '上传失败', 'error');
+          }
+        } catch (e) {
+          showToast('解析响应数据失败', 'error');
         }
+      });
+      
+      // 错误处理
+      xhr.addEventListener('error', function() {
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>开始上传';
+        showToast('上传失败，请检查网络连接', 'error');
+      });
+      
+      // 取消处理
+      xhr.addEventListener('abort', function() {
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>开始上传';
+        showToast('上传已取消', 'info');
+      });
+      
+      // 开始上传
+      xhr.open('POST', '/health_reports/upload');
+      xhr.setRequestHeader('X-CSRF-Token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send(formData);
+      
       } catch (error) {
         console.error('上传失败:', error);
         uploadProgress.style.display = 'none';

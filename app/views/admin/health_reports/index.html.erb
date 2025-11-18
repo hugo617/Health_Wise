@@ -443,7 +443,7 @@
                             <input type="file" class="form-control" id="uploadReportFile" accept=".pdf,application/pdf" required>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                只支持 PDF 格式，文件大小不超过 10MB
+                                只支持 PDF 格式，文件大小不超过 500MB
                             </div>
                             <div id="fileInfo" class="mt-2" style="display: none;">
                                 <div class="alert alert-info mb-0">
@@ -912,11 +912,11 @@
                         return;
                     }
 
-                    // 验证文件大小（10MB = 10 * 1024 * 1024 bytes）
-                    const maxSize = 10 * 1024 * 1024;
+                    // 验证文件大小（500MB = 500 * 1024 * 1024 bytes）
+                    const maxSize = 500 * 1024 * 1024;
                     if (file.size > maxSize) {
                         fileError.style.display = 'block';
-                        fileErrorMessage.textContent = `文件大小超过限制（最大 10MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                        fileErrorMessage.textContent = `文件大小超过限制（最大 500MB），当前文件大小：${(file.size / 1024 / 1024).toFixed(2)} MB`;
                         fileInput.value = '';
                         return;
                     }
@@ -970,9 +970,9 @@
                 return;
             }
 
-            const maxSize = 10 * 1024 * 1024;
+            const maxSize = 500 * 1024 * 1024;
             if (file.size > maxSize) {
-                showNotification('错误', '文件大小超过限制（最大 10MB）', 'error');
+                showNotification('错误', '文件大小超过限制（最大 500MB）', 'error');
                 return;
             }
 
@@ -987,41 +987,60 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>上传中...';
 
-            // 发送请求
-            fetch('/admin/health_reports/upload', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                uploadProgress.style.display = 'none';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>开始上传';
-
-                if (data.success) {
-                    showNotification('成功', data.message || '报告上传成功', 'success');
-
-                    // 关闭模态框
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('uploadReportModal'));
-                    modal.hide();
-
-                    // 刷新报告列表
-                    loadReports();
-                } else {
-                    showNotification('错误', data.error || '上传失败', 'error');
+            // 使用XMLHttpRequest实现进度跟踪
+            const xhr = new XMLHttpRequest();
+            
+            // 进度事件监听
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    
+                    // 更新上传按钮文字显示进度
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>上传中... ${Math.round(percentComplete)}%`;
+                    
+                    console.log(`上传进度: ${Math.round(percentComplete)}%`);
                 }
-            })
-            .catch(error => {
-                console.error('上传失败:', error);
+            });
+            
+            // 加载完成事件
+            xhr.addEventListener('load', function() {
                 uploadProgress.style.display = 'none';
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>开始上传';
-                showNotification('错误', '上传失败，请稍后重试', 'error');
+                
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    
+                    if (data.success) {
+                        showNotification('成功', data.message || '报告上传成功', 'success');
+
+                        // 关闭模态框
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadReportModal'));
+                        modal.hide();
+
+                        // 刷新报告列表
+                        loadReports();
+                    } else {
+                        showNotification('错误', data.error || '上传失败', 'error');
+                    }
+                } catch (e) {
+                    showNotification('错误', '解析响应数据失败', 'error');
+                }
             });
+            
+            // 错误处理
+            xhr.addEventListener('error', function() {
+                uploadProgress.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>开始上传';
+                showNotification('错误', '上传失败，请检查网络连接', 'error');
+            });
+            
+            // 开始上传
+            xhr.open('POST', '/admin/health_reports/upload');
+            xhr.setRequestHeader('X-CSRF-Token', document.querySelector('meta[name="csrf-token"]').content);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.send(formData);
         }
 
         // 工具函数：格式化日期

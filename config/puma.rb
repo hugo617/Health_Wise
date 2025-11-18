@@ -32,3 +32,21 @@ plugin :tmp_restart
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
+
+# 大文件上传优化配置
+# 注意：以下配置需要Puma 5.0+版本支持，如果报错请注释掉
+# request_body_max_size 500.megabytes
+# persistent_timeout 600
+
+# 配置工作进程数（根据服务器性能调整）
+# workers ENV.fetch("WEB_CONCURRENCY") { 2 }
+
+# 配置线程数（处理并发上传）
+threads_count = ENV.fetch("RAILS_MAX_THREADS") { 5 }
+threads threads_count, threads_count
+
+# 配置预加载应用（减少内存使用）
+# preload_app!
+
+# 配置优雅重启
+plugin :tmp_restart
